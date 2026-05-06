@@ -179,6 +179,20 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
 .share-toast.show{opacity:1}
 .mobile-hint{background:var(--yellow-soft);border:1px solid var(--yellow);color:#6b4e00;padding:8px 12px;border-radius:6px;font-size:12px;margin-top:8px;line-height:1.5;display:none}
 .is-mobile .mobile-hint{display:block}
+
+/* Random picker pill — active highlight */
+.src-btn,.cnt-btn{transition:background .12s,color .12s,box-shadow .12s,transform .12s;font-family:inherit}
+.src-btn.active,.cnt-btn.active{
+  background:var(--primary) !important;
+  color:#fff !important;
+  border-color:var(--primary) !important;
+  box-shadow:0 0 0 3px rgba(29,111,155,.18),0 2px 6px rgba(29,111,155,.25);
+  transform:translateY(-1px);
+  font-weight:600;
+}
+.src-btn.active::before,.cnt-btn.active::before{content:"✓ ";font-weight:700}
+.src-btn .cnt,.cnt-btn .cnt{font-size:11px;opacity:.85;margin-left:4px}
+#clearMarksBtn:hover{background:var(--yellow) !important;color:#fff !important;border-color:var(--yellow) !important}
 </style>
 </head>
 <body>
@@ -186,7 +200,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
   <div class="h-row" id="headerRow">
     <button class="homelink hidden" id="homeBtn">&larr; 回首頁</button>
     <h1 id="hdrTitle">金融證照 · 互動考題</h1>
-    <span class="sub" id="hdrSub">人身保險業務員 + 銀行內控</span>
+    
     <div class="tabs" id="tabs"></div>
     <button class="profile-pill" id="profileBtn" title="切換 / 管理使用者"><span class="pdot"></span><span class="pname" id="profileName">預設使用者</span> ▾</button>
     <div class="stat" id="stat"></div>
@@ -208,7 +222,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     <div class="special-row">
       <button class="special-btn" id="reviewWrongBtn">📝 錯題複習 <span class="badge" id="wrongBadge">0</span></button>
       <button class="special-btn mark" id="reviewMarkBtn">🔖 標記題複習 <span class="badge" id="markBadge">0</span></button>
-      <button class="special-btn" id="randomBtn">🎲 隨機 50 題（本科目）</button>
+      <button class="special-btn" id="randomBtn">🎲 隨機練習錯題</button>
       <button class="special-btn" id="exportHomeBtn">📤 匯出 / 匯入</button>
     </div>
     <div class="legend" style="margin-top:14px">
@@ -290,6 +304,38 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
   </div>
 </div>
 
+
+
+<!-- Random picker -->
+<div class="modal-bg" id="randomPickerModal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3>🎲 隨機練習</h3>
+    <div class="modal-sub" id="randomPickerSub">— 題</div>
+    <label>① 題目來源</label>
+    <div class="src-row" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0">
+      <button class="btn ghost src-btn" data-src="all"    id="srcAll">完全隨機 <span class="cnt"></span></button>
+      <button class="btn ghost src-btn" data-src="wrong"  id="srcWrong">錯題隨機 <span class="cnt"></span></button>
+      <button class="btn ghost src-btn" data-src="marked" id="srcMarked">標記隨機 <span class="cnt"></span></button>
+    </div>
+    <div id="srcEmptyWarn" style="display:none;margin-top:6px;padding:8px 12px;background:var(--red-soft);color:var(--red);border:1px solid var(--red);border-radius:6px;font-size:12px"></div>
+    <label style="margin-top:14px">② 抽幾題</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px">
+      <button class="btn ghost cnt-btn" data-n="25"  id="cnt25">25 題</button>
+      <button class="btn ghost cnt-btn" data-n="50"  id="cnt50">50 題</button>
+      <button class="btn ghost cnt-btn" data-n="100" id="cnt100">100 題</button>
+      <button class="btn ghost cnt-btn" data-n="all" id="cntAll">全部</button>
+    </div>
+    <div class="row-2" style="align-items:center">
+      <input type="number" id="randomCount" min="1" value="10" style="font-size:15px">
+      <span style="font-size:13px;color:var(--soft)">題（自訂直接改數字）</span>
+    </div>
+    <p class="hint" style="margin-top:14px">💡 任何來源都採「<strong>重答模式</strong>」：題目<u>不會顯示原本的答案</u>，答對後該題的錯題記錄會自動清掉。</p>
+    <div class="modal-actions" style="gap:8px">
+      <button class="btn ghost" id="randomCancelBtn">取消</button>
+      <button class="btn" id="randomStartBtn">開始作答</button>
+    </div>
+  </div>
+</div>
 
 <!-- Share / copy fallback modal -->
 <div class="modal-bg" id="shareModal" role="dialog" aria-modal="true">
@@ -631,10 +677,8 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     $("homeBtn").onclick = ()=>{ state.view="home"; state.quiz=null; render(); window.scrollTo(0,0); };
     if(state.view==="quiz" && state.quiz){
       $("hdrTitle").textContent = state.quiz.title;
-      $("hdrSub").textContent = D[state.exam].label;
     } else {
       $("hdrTitle").textContent = "金融證照 · 互動考題";
-      $("hdrSub").textContent = "人身保險業務員 + 銀行內控";
     }
     $("profileName").textContent = profiles[activeId] ? profiles[activeId].name : "(未選)";
     const allQs = countAllExamQuestions(state.exam);
@@ -732,9 +776,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       render();
     };
         $("randomBtn").onclick = ()=>{
-      const all = getAllExamQuestions(state.exam);
-      const N = Math.min(50, all.length);
-      enterQuiz({ type:"random", title:"隨機 "+N+" 題 · "+exam.label, items: shuffleArr(all).slice(0,N) });
+      openRandomPicker();
     };
     $("exportHomeBtn").onclick = ()=>{ openExportModal({ scope:"exam" }); };
     $("gpReset").onclick = ()=>{
@@ -796,9 +838,12 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     let ansN=0, correctN=0;
     items.forEach((it, i)=>{
       const ans = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
-      const correct = ans && ans === it.q.ans;
-      const wrong = ans && ans !== it.q.ans;
-      if(ans){ ansN++; if(correct) correctN++; }
+      // In retryMode, only show correct/wrong AFTER user has retried this item in this session
+      const retried = quiz.retryMode && quiz.retried && quiz.retried[i];
+      const showState = !quiz.retryMode || retried;
+      const correct = showState && ans && ans === it.q.ans;
+      const wrong   = showState && ans && ans !== it.q.ans;
+      if(showState && ans){ ansN++; if(correct) correctN++; }
       const b = document.createElement("button");
       b.className = "gbtn"+(i===quiz.idx?" cur":"")+(correct?" right":"")+(wrong?" wrong":"")+(isMarked(it.examKey,it.subIdx,it.secIdx,it.qIdx)?" marked":"");
       b.textContent = String(i+1);
@@ -825,7 +870,8 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
 
     const it = items[quiz.idx], q = it.q;
     const cur = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
-    const locked = !!cur;
+    const retriedHere = quiz.retryMode && quiz.retried && quiz.retried[quiz.idx];
+    const locked = quiz.retryMode ? !!retriedHere : !!cur;
     let optsHTML = "";
     for(const k of ["A","B","C","D"]){
       let cls="opt";
@@ -857,7 +903,15 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         (locked?'<button class="btn ghost" id="redoBtn">↺ 重做本題</button>':'')+
       '</div></div>';
     $("quizMain").querySelectorAll(".opt").forEach(btn=>{
-      btn.onclick = ()=>{ if(locked) return; setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, btn.dataset.k); render(); };
+      btn.onclick = ()=>{
+        if(locked) return;
+        setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, btn.dataset.k);
+        if(quiz.retryMode){
+          quiz.retried = quiz.retried || {};
+          quiz.retried[quiz.idx] = true;
+        }
+        render();
+      };
     });
     $("markBtn").onclick = ()=>{ toggleMark(it.examKey, it.subIdx, it.secIdx, it.qIdx); render(); };
     $("prevBtn").onclick = ()=>{ if(quiz.idx>0){ quiz.idx--; render(); window.scrollTo(0,0); } };
@@ -866,6 +920,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     if(rb) rb.onclick = ()=>{
       const sec=((progress[it.examKey]||{})[it.subIdx]||{})[it.secIdx];
       if(sec){ delete sec[it.qIdx]; saveActive("quiz_progress_v1", progress); }
+      if(quiz.retryMode && quiz.retried){ delete quiz.retried[quiz.idx]; }
       render();
     };
     document.onkeydown = (ev)=>{
@@ -876,7 +931,11 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         if(locked) return;
         const map={a:"A",b:"B",c:"C",d:"D","1":"A","2":"B","3":"C","4":"D"};
         const k = map[ev.key.toLowerCase()] || ev.key.toUpperCase();
-        if(["A","B","C","D"].includes(k)){ setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, k); render(); }
+        if(["A","B","C","D"].includes(k)){
+          setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, k);
+          if(quiz.retryMode){ quiz.retried = quiz.retried || {}; quiz.retried[quiz.idx] = true; }
+          render();
+        }
       }
     };
   }
@@ -887,7 +946,9 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     items.forEach((it,i)=>{
       const ans = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
       const m = isMarked(it.examKey, it.subIdx, it.secIdx, it.qIdx);
-      if(ans){ ansN++; if(ans===it.q.ans) correctN++; else { wrongN++; wrongList.push({idx:i, it, ans}); } }
+      const retried = quiz.retryMode && quiz.retried && quiz.retried[i];
+      const visible = !quiz.retryMode || retried;
+      if(visible && ans){ ansN++; if(ans===it.q.ans) correctN++; else { wrongN++; wrongList.push({idx:i, it, ans}); } }
       if(m) markedN++;
     });
     const pct = items.length ? Math.round(correctN/items.length*100) : 0;
@@ -1294,9 +1355,136 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
   $("closeExportBtn").onclick = ()=>{ $("exportModal").classList.remove("show"); };
 
   // Click background to close modals
-  ["profileModal","exportModal"].forEach(id=>{
+  ["profileModal","exportModal","randomPickerModal"].forEach(id=>{
     $(id).addEventListener("click", (e)=>{ if(e.target.id===id) $(id).classList.remove("show"); });
   });
+
+  // ---- Random picker (source + count, two-step: select then start) ----
+  let _randomSource = "wrong"; // "all" | "wrong" | "marked"
+  function getPickerCounts(){
+    return {
+      all: getAllExamQuestions(state.exam).length,
+      wrong: getAllWrongQuestions(state.exam).length,
+      marked: getAllMarkedQuestions(state.exam).length,
+    };
+  }
+  function getPickerPool(src){
+    if(src === "wrong")  return getAllWrongQuestions(state.exam);
+    if(src === "marked") return getAllMarkedQuestions(state.exam);
+    return getAllExamQuestions(state.exam);
+  }
+  function srcLabel(src){ return src==="wrong"?"錯題":src==="marked"?"標記":"完全"; }
+  function refreshPickerUI(){
+    const counts = getPickerCounts();
+    const exam = D[state.exam];
+    $("randomPickerSub").textContent = "「" + exam.label + "」共 " + counts.all + " 題";
+    // Update count badges in source pills
+    ({all:counts.all, wrong:counts.wrong, marked:counts.marked}).hasOwnProperty;
+    document.querySelectorAll(".src-btn").forEach(b=>{
+      const n = counts[b.dataset.src];
+      const c = b.querySelector(".cnt"); if(c) c.textContent = "(" + n + ")";
+      b.classList.toggle("active", b.dataset.src === _randomSource);
+      // Visually mute (but not disable) sources that have 0 questions
+      b.style.opacity = n === 0 ? .55 : 1;
+    });
+    // Update count pills' "全部" label to show the actual pool size
+    const pool = counts[_randomSource];
+    const allCntBtn = document.getElementById("cntAll");
+    if(allCntBtn) allCntBtn.textContent = "全部 (" + pool + ")";
+    // Disable count pills that exceed pool size
+    [25,50,100].forEach(n=>{
+      const b = document.getElementById("cnt"+n);
+      if(b){
+        const tooBig = pool < n;
+        b.disabled = tooBig || pool === 0;
+        b.style.opacity = b.disabled ? .35 : 1;
+      }
+    });
+    if(allCntBtn){ allCntBtn.disabled = pool === 0; allCntBtn.style.opacity = pool === 0 ? .35 : 1; }
+    // Sync count-pill highlight to current input value
+    syncCountPillsFromInput();
+    // Empty source warning
+    const warn = document.getElementById("srcEmptyWarn");
+    if(pool === 0){
+      warn.style.display = "block";
+      warn.textContent = "⚠️ 「" + srcLabel(_randomSource) + "隨機」目前沒有題目，請改選其他來源（或先去做題、加標記）。";
+    } else {
+      warn.style.display = "none";
+    }
+    // Don't auto-cap input — keep user's value (or default 10)
+    const ci = $("randomCount");
+    ci.max = Math.max(pool, 1);
+    // Disable start button if pool=0 or input invalid
+    const startBtn = document.getElementById("randomStartBtn");
+    const v = parseInt(ci.value, 10);
+    startBtn.disabled = pool === 0 || !v || v <= 0;
+    startBtn.style.opacity = startBtn.disabled ? .5 : 1;
+  }
+  function syncCountPillsFromInput(){
+    const v = parseInt($("randomCount").value, 10);
+    const counts = getPickerCounts();
+    const pool = counts[_randomSource];
+    document.querySelectorAll(".cnt-btn").forEach(b=>{
+      const n = b.dataset.n;
+      let active = false;
+      if(n === "all") active = (v === pool && pool > 0);
+      else active = (String(v) === n);
+      b.classList.toggle("active", active);
+    });
+  }
+  function openRandomPicker(){
+    const counts = getPickerCounts();
+    if(counts.wrong > 0) _randomSource = "wrong";
+    else if(counts.marked > 0) _randomSource = "marked";
+    else _randomSource = "all";
+    $("randomCount").value = 10;
+    refreshPickerUI();
+    $("randomPickerModal").classList.add("show");
+  }
+  function startRandomQuiz(N){
+    const exam = D[state.exam];
+    const pool = getPickerPool(_randomSource);
+    if(pool.length === 0){
+      alert("「" + exam.label + "」的「" + srcLabel(_randomSource) + "隨機」目前沒有題目，請改選其他來源。");
+      return;
+    }
+    if(!N || N <= 0){ alert("請選擇題數或輸入大於 0 的數字。"); return; }
+    let actualN = Math.min(N, pool.length);
+    if(actualN < N){
+      if(!confirm("「" + srcLabel(_randomSource) + "隨機」只有 " + pool.length + " 題，會幫你抽全部 " + actualN + " 題。要繼續嗎？")) return;
+    }
+    const items = shuffleArr(pool).slice(0, actualN).map(x=>({ ...x }));
+    $("randomPickerModal").classList.remove("show");
+    const titleLabel = _randomSource === "wrong" ? "錯題隨機練習" : _randomSource === "marked" ? "標記隨機練習" : "完全隨機練習";
+    enterQuiz({
+      type: "random-" + _randomSource,
+      title: titleLabel + " · " + exam.label + "（" + actualN + " 題）",
+      items,
+      retryMode: true,
+    });
+  }
+  // Source pill selection (does NOT start)
+  document.querySelectorAll(".src-btn").forEach(b=>{
+    b.onclick = ()=>{ _randomSource = b.dataset.src; refreshPickerUI(); };
+  });
+  // Count pill selection (does NOT start) — fills the input
+  document.querySelectorAll(".cnt-btn").forEach(b=>{
+    b.onclick = ()=>{
+      const v = b.dataset.n;
+      const counts = getPickerCounts();
+      const pool = counts[_randomSource];
+      $("randomCount").value = (v === "all") ? pool : v;
+      refreshPickerUI();
+    };
+  });
+  // Custom input live updates pill highlight
+  $("randomCount").addEventListener("input", ()=>{ refreshPickerUI(); });
+  // Start button — the only thing that actually launches the quiz
+  $("randomStartBtn").onclick = ()=>{
+    const N = parseInt($("randomCount").value, 10);
+    startRandomQuiz(N);
+  };
+  $("randomCancelBtn").onclick = ()=>{ $("randomPickerModal").classList.remove("show"); };
 
   function render(){ renderHeader(); if(state.view==="home") renderHome(); else renderQuiz(); }
   render();
