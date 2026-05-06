@@ -126,27 +126,72 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
 .empty{padding:40px;text-align:center;color:var(--soft)}
 .footer{color:var(--soft);font-size:12px;text-align:center;margin:18px 0 28px}
 .hidden{display:none !important}
+
+/* Profile selector */
+.profile-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-size:13px;color:var(--ink);font-family:inherit}
+.profile-pill:hover{border-color:var(--primary);color:var(--primary)}
+.profile-pill .pdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green)}
+.profile-pill .pname{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(15,20,30,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+.modal-bg.show{display:flex}
+.modal-card{background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);max-width:520px;width:100%;padding:22px;max-height:90vh;overflow:auto}
+.modal-card h3{margin:0 0 4px;font-size:17px;font-weight:700}
+.modal-card .modal-sub{color:var(--soft);font-size:13px;margin-bottom:14px}
+.modal-card .opt-row{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+.modal-card .exp-opt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:#f8f9fa;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:14px;text-align:left;color:var(--ink);font-family:inherit;width:100%}
+.modal-card .exp-opt:hover{background:var(--primary-soft);border-color:var(--primary)}
+.modal-card .exp-opt:disabled{opacity:.5;cursor:not-allowed;background:#f1f3f5}
+.modal-card .exp-opt .count{color:var(--soft);font-size:12px}
+.modal-card .hint{color:var(--soft);font-size:12px;line-height:1.6;margin:0 0 12px;background:var(--grey-soft);padding:10px 12px;border-radius:6px}
+.modal-card .modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.modal-card label{display:block;font-size:13px;color:var(--soft);margin:8px 0 4px}
+.modal-card input[type="text"],.modal-card select{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-family:inherit;background:#fff}
+.modal-card .row-2{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.profile-list{display:flex;flex-direction:column;gap:6px;margin:8px 0 14px}
+.profile-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.profile-row.active{border-color:var(--primary);background:var(--primary-soft)}
+.profile-row .pname{flex:1;font-size:14px}
+.profile-row .pdate{color:var(--soft);font-size:11px}
+.profile-row button{font-size:12px;padding:4px 10px;background:#fff;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--soft);font-family:inherit}
+.profile-row button:hover{border-color:var(--primary);color:var(--primary)}
+.profile-row button.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* Print styles for error worksheet — invoked when ?print=1 in exported HTML */
+.print-only{display:none}
+@media print{
+  .print-only{display:block}
+  body{background:#fff;font-size:12px;line-height:1.5}
+  .no-print{display:none !important}
+  header,.sidebar,.modal-bg{display:none !important}
+  .layout{display:block;padding:0;margin:0}
+  .card{box-shadow:none;border:0;page-break-inside:avoid;padding:8px 0}
+  .qhead{margin-bottom:6px}
+  .opt{padding:4px 8px;font-size:12px;border-radius:4px}
+}
 </style>
 </head>
 <body>
-<header>
+<header class="no-print">
   <div class="h-row" id="headerRow">
     <button class="homelink hidden" id="homeBtn">&larr; 回首頁</button>
     <h1 id="hdrTitle">金融證照 · 互動考題</h1>
     <span class="sub" id="hdrSub">人身保險業務員 + 銀行內控</span>
     <div class="tabs" id="tabs"></div>
+    <button class="profile-pill" id="profileBtn" title="切換 / 管理使用者"><span class="pdot"></span><span class="pname" id="profileName">預設</span> ▾</button>
     <div class="stat" id="stat"></div>
   </div>
 </header>
 
 <!-- Home view -->
-<main id="homeView">
+<main id="homeView" class="no-print">
   <div class="panel">
     <div class="global-prog">
       <span class="gp-label" id="gpLabel">總體答題進度</span>
       <div class="gp-bar"><div class="gp-fill" id="gpFill"></div></div>
       <span class="gp-text" id="gpText">尚未開始作答</span>
-      <button class="gp-reset" id="gpReset" title="清除所有作答記錄">重置全部</button>
+      <button class="gp-reset" id="gpReset" title="清除目前使用者本科目所有作答">重置本科目</button>
     </div>
     <h2 id="examLabel">章節列表</h2>
     <div class="desc">點擊章節即可進入該章節的互動測驗。鍵盤可用 ←/→ 切換題目、A/B/C/D 或 1-4 選答案。</div>
@@ -154,6 +199,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
       <button class="special-btn" id="reviewWrongBtn">📝 錯題複習 <span class="badge" id="wrongBadge">0</span></button>
       <button class="special-btn mark" id="reviewMarkBtn">🔖 標記題複習 <span class="badge" id="markBadge">0</span></button>
       <button class="special-btn" id="randomBtn">🎲 隨機 50 題（本科目）</button>
+      <button class="special-btn" id="exportHomeBtn">📤 匯出 / 匯入</button>
     </div>
     <div class="legend" style="margin-top:14px">
       <span><i class="ldot r"></i>尚未作答</span>
@@ -167,7 +213,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
 
 <!-- Quiz view -->
 <div class="layout hidden" id="quizView">
-  <aside class="sidebar">
+  <aside class="sidebar no-print">
     <div style="font-size:13px;color:var(--soft);margin-bottom:6px"><span id="sbTotal">— 題</span></div>
     <div class="grid" id="grid"></div>
     <div class="legend">
@@ -177,9 +223,47 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     </div>
     <button id="resetBtn" class="btn danger" style="margin-top:12px;width:100%;font-size:13px">重置本卷作答</button>
     <button id="summaryBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">📊 查看本卷總結</button>
+    <button id="exportQuizBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">📤 匯出本卷成績</button>
     <button id="shuffleBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">🔀 切換順序／隨機</button>
   </aside>
   <main class="main" id="quizMain"></main>
+</div>
+
+<!-- Profile modal -->
+<div class="modal-bg" id="profileModal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3>👤 使用者管理</h3>
+    <div class="modal-sub">同一台電腦可以建立多個使用者，作答進度互不干擾。</div>
+    <div class="profile-list" id="profileList"></div>
+    <label>新增使用者</label>
+    <div class="row-2">
+      <input type="text" id="newProfileName" placeholder="輸入名字…" maxlength="30">
+      <button class="btn" id="addProfileBtn">＋ 新增</button>
+    </div>
+    <p class="hint">💡 想要在不同裝置間同步進度嗎？切換到該使用者後，到「📤 匯出 / 匯入」匯出 JSON 備份，到另一台裝置再匯入即可。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="closeProfileBtn">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export modal -->
+<div class="modal-bg" id="exportModal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 id="exportTitle">📤 匯出 / 匯入</h3>
+    <div class="modal-sub" id="exportSub">使用者：— · 範圍：—</div>
+    <label style="margin-top:0">匯出格式</label>
+    <div class="opt-row" id="exportOpts"></div>
+    <label>從 JSON 還原進度</label>
+    <div class="row-2">
+      <input type="file" id="importFile" accept=".json,application/json">
+      <button class="btn ghost" id="importBtn">📥 匯入</button>
+    </div>
+    <p class="hint">💡 跨裝置同步：在裝置 A 匯出 JSON 備份，透過雲端硬碟／Email 傳到裝置 B，再點「📥 匯入」即可還原。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="closeExportBtn">關閉</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -188,98 +272,177 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
 (function(){
   "use strict";
   const D = window.QUIZ_DATA;
-  const STORAGE_KEY = "quiz_progress_v1";
-  const STORAGE_MARK = "quiz_marks_v1";
-  const STORAGE_SHUFFLE = "quiz_shuffle_v1";
 
+  // ---- Profile system ----
+  const KEY_PROFILES = "quiz_profiles_v1";
+  const KEY_ACTIVE   = "quiz_active_profile_v1";
   function loadJSON(k, def){
-    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; }
+    try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return def; }
   }
-  function saveJSON(k, v){
-    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
-  }
-  let progress = loadJSON(STORAGE_KEY, {});
-  let marks    = loadJSON(STORAGE_MARK, {});
-  let shuffle  = loadJSON(STORAGE_SHUFFLE, {});
+  function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function nowISO(){ return new Date().toISOString(); }
+  function genId(){ return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  // profiles = { id: { name, createdAt } }
+  let profiles = loadJSON(KEY_PROFILES, null);
+  let activeId = localStorage.getItem(KEY_ACTIVE);
 
-  const state = {
-    view: "home",
-    exam: "insurance",
-    quiz: null,
-  };
-
-  function escHTML(s){
-    return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  // Migrate from older key-based storage if present
+  function migrateLegacy(){
+    if(profiles) return;
+    profiles = {};
+    const defId = genId();
+    profiles[defId] = { name: "預設", createdAt: nowISO() };
+    saveJSON(KEY_PROFILES, profiles);
+    localStorage.setItem(KEY_ACTIVE, defId);
+    activeId = defId;
+    // Migrate legacy keys to this profile
+    const legacy = ["quiz_progress_v1", "quiz_marks_v1", "quiz_shuffle_v1"];
+    legacy.forEach(lk=>{
+      const v = localStorage.getItem(lk);
+      if(v){
+        localStorage.setItem(lk + "::" + defId, v);
+        // keep legacy too for safety; do not delete
+      }
+    });
   }
+  migrateLegacy();
+  if(!activeId || !profiles[activeId]){
+    activeId = Object.keys(profiles)[0];
+    localStorage.setItem(KEY_ACTIVE, activeId);
+  }
+
+  function pkey(base){ return base + "::" + activeId; }
+  function loadActive(base, def){ return loadJSON(pkey(base), def); }
+  function saveActive(base, val){ saveJSON(pkey(base), val); }
+
+  let progress = loadActive("quiz_progress_v1", {});
+  let marks    = loadActive("quiz_marks_v1", {});
+  let shuffle  = loadActive("quiz_shuffle_v1", {});
+  function persistAll(){
+    saveActive("quiz_progress_v1", progress);
+    saveActive("quiz_marks_v1", marks);
+    saveActive("quiz_shuffle_v1", shuffle);
+  }
+  function reloadActiveData(){
+    progress = loadActive("quiz_progress_v1", {});
+    marks    = loadActive("quiz_marks_v1", {});
+    shuffle  = loadActive("quiz_shuffle_v1", {});
+  }
+
+  const state = { view:"home", exam:"insurance", quiz:null };
+
+  // ---- Helpers ----
+  function escHTML(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
   function $(id){ return document.getElementById(id); }
   function setHidden(el, h){ el.classList.toggle("hidden", h); }
-  function getSectionAnswers(examKey, subIdx, secIdx){
-    return ((progress[examKey]||{})[subIdx]||{})[secIdx]||{};
+  function getSectionAnswers(ek, si, ci){ return ((progress[ek]||{})[si]||{})[ci]||{}; }
+  function setSectionAnswer(ek, si, ci, qi, ans){
+    progress[ek]=progress[ek]||{}; progress[ek][si]=progress[ek][si]||{}; progress[ek][si][ci]=progress[ek][si][ci]||{};
+    progress[ek][si][ci][qi]=ans; saveActive("quiz_progress_v1", progress);
   }
-  function setSectionAnswer(examKey, subIdx, secIdx, qIdx, ans){
-    progress[examKey] = progress[examKey] || {};
-    progress[examKey][subIdx] = progress[examKey][subIdx] || {};
-    progress[examKey][subIdx][secIdx] = progress[examKey][subIdx][secIdx] || {};
-    progress[examKey][subIdx][secIdx][qIdx] = ans;
-    saveJSON(STORAGE_KEY, progress);
+  function clearSectionAnswers(ek, si, ci){
+    if(progress[ek]&&progress[ek][si]&&progress[ek][si][ci]){ delete progress[ek][si][ci]; saveActive("quiz_progress_v1", progress); }
   }
-  function clearSectionAnswers(examKey, subIdx, secIdx){
-    if(progress[examKey]&&progress[examKey][subIdx]&&progress[examKey][subIdx][secIdx]){
-      delete progress[examKey][subIdx][secIdx];
-      saveJSON(STORAGE_KEY, progress);
-    }
+  function isMarked(ek,si,ci,qi){ return !!(((marks[ek]||{})[si]||{})[ci]||{})[qi]; }
+  function toggleMark(ek,si,ci,qi){
+    marks[ek]=marks[ek]||{}; marks[ek][si]=marks[ek][si]||{}; marks[ek][si][ci]=marks[ek][si][ci]||{};
+    if(marks[ek][si][ci][qi]) delete marks[ek][si][ci][qi]; else marks[ek][si][ci][qi]=true;
+    saveActive("quiz_marks_v1", marks);
   }
-  function isMarked(examKey, subIdx, secIdx, qIdx){
-    return !!(((marks[examKey]||{})[subIdx]||{})[secIdx]||{})[qIdx];
+  function getShuffleOrder(ek,si,ci,n){
+    const o=((shuffle[ek]||{})[si]||{})[ci]; return (o&&o.length===n)?o:null;
   }
-  function toggleMark(examKey, subIdx, secIdx, qIdx){
-    marks[examKey] = marks[examKey] || {};
-    marks[examKey][subIdx] = marks[examKey][subIdx] || {};
-    marks[examKey][subIdx][secIdx] = marks[examKey][subIdx][secIdx] || {};
-    if(marks[examKey][subIdx][secIdx][qIdx]){
-      delete marks[examKey][subIdx][secIdx][qIdx];
-    } else {
-      marks[examKey][subIdx][secIdx][qIdx] = true;
-    }
-    saveJSON(STORAGE_MARK, marks);
+  function setShuffleOrder(ek,si,ci,order){
+    shuffle[ek]=shuffle[ek]||{}; shuffle[ek][si]=shuffle[ek][si]||{};
+    if(order===null) delete shuffle[ek][si][ci]; else shuffle[ek][si][ci]=order;
+    saveActive("quiz_shuffle_v1", shuffle);
   }
-  function getShuffleOrder(examKey, subIdx, secIdx, n){
-    const ek = ((shuffle[examKey]||{})[subIdx]||{})[secIdx];
-    if(ek && ek.length === n) return ek;
-    return null;
-  }
-  function setShuffleOrder(examKey, subIdx, secIdx, order){
-    shuffle[examKey] = shuffle[examKey] || {};
-    shuffle[examKey][subIdx] = shuffle[examKey][subIdx] || {};
-    if(order === null){
-      delete shuffle[examKey][subIdx][secIdx];
-    } else {
-      shuffle[examKey][subIdx][secIdx] = order;
-    }
-    saveJSON(STORAGE_SHUFFLE, shuffle);
-  }
-  function shuffleArr(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
+  function shuffleArr(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+  function downloadFile(filename, content, mime){
+    const blob = new Blob([content], { type: mime || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
   }
 
+  // ---- Counters ----
+  function countAllExamQuestions(ek){
+    let n=0; Object.values(D[ek].subjects).forEach(s=>Object.values(s).forEach(a=>n+=a.length)); return n;
+  }
+  function countAnsweredExam(ek){
+    let n=0; Object.values(progress[ek]||{}).forEach(s=>Object.values(s).forEach(qs=>n+=Object.keys(qs).length)); return n;
+  }
+  function countCorrectExam(ek){
+    const exam=D[ek]; const p=progress[ek]||{}; let n=0;
+    const subKeys=Object.keys(exam.subjects);
+    Object.entries(p).forEach(([si,secs])=>{
+      const sub=exam.subjects[subKeys[+si]]; if(!sub) return;
+      const secKeys=Object.keys(sub);
+      Object.entries(secs).forEach(([ci,qs])=>{
+        const arr=sub[secKeys[+ci]]; if(!arr) return;
+        Object.entries(qs).forEach(([qi,a])=>{ if(arr[+qi]&&arr[+qi].ans===a) n++; });
+      });
+    });
+    return n;
+  }
+  function getAllWrongQuestions(ek){
+    const exam=D[ek]; const p=progress[ek]||{}; const out=[];
+    const subKeys=Object.keys(exam.subjects);
+    Object.entries(p).forEach(([si,secs])=>{
+      const sub=exam.subjects[subKeys[+si]]; if(!sub) return;
+      const secKeys=Object.keys(sub);
+      Object.entries(secs).forEach(([ci,qs])=>{
+        const arr=sub[secKeys[+ci]]; if(!arr) return;
+        Object.entries(qs).forEach(([qi,a])=>{
+          if(arr[+qi]&&arr[+qi].ans!==a) out.push({examKey:ek, subIdx:+si, secIdx:+ci, qIdx:+qi, q:arr[+qi], subLabel:subKeys[+si], secLabel:secKeys[+ci], userAns:a});
+        });
+      });
+    });
+    return out;
+  }
+  function getAllMarkedQuestions(ek){
+    const exam=D[ek]; const m=marks[ek]||{}; const out=[];
+    const subKeys=Object.keys(exam.subjects);
+    Object.entries(m).forEach(([si,secs])=>{
+      const sub=exam.subjects[subKeys[+si]]; if(!sub) return;
+      const secKeys=Object.keys(sub);
+      Object.entries(secs).forEach(([ci,qs])=>{
+        const arr=sub[secKeys[+ci]]; if(!arr) return;
+        Object.keys(qs).forEach(qi=>{
+          if(arr[+qi]) out.push({examKey:ek, subIdx:+si, secIdx:+ci, qIdx:+qi, q:arr[+qi], subLabel:subKeys[+si], secLabel:secKeys[+ci]});
+        });
+      });
+    });
+    return out;
+  }
+  function getAllExamQuestions(ek){
+    const exam=D[ek]; const out=[];
+    const subKeys=Object.keys(exam.subjects);
+    subKeys.forEach((sk, si)=>{
+      const secKeys=Object.keys(exam.subjects[sk]);
+      secKeys.forEach((ck, ci)=>{
+        exam.subjects[sk][ck].forEach((q, qi)=>{
+          out.push({examKey:ek, subIdx:si, secIdx:ci, qIdx:qi, q, subLabel:sk, secLabel:ck});
+        });
+      });
+    });
+    return out;
+  }
+
+  // ---- Header / Profile pill ----
   function renderHeader(){
-    const tabs = $("tabs");
-    tabs.innerHTML = "";
+    const tabs = $("tabs"); tabs.innerHTML = "";
     Object.entries(D).forEach(([k, v])=>{
       const b = document.createElement("button");
       b.className = "tab" + (state.exam===k?" active":"");
       b.textContent = v.label;
-      b.onclick = ()=>{ state.exam = k; state.view="home"; state.quiz=null; render(); };
+      b.onclick = ()=>{ state.exam=k; state.view="home"; state.quiz=null; render(); };
       tabs.appendChild(b);
     });
     setHidden($("homeBtn"), state.view==="home");
     $("homeBtn").onclick = ()=>{ state.view="home"; state.quiz=null; render(); window.scrollTo(0,0); };
-
     if(state.view==="quiz" && state.quiz){
       $("hdrTitle").textContent = state.quiz.title;
       $("hdrSub").textContent = D[state.exam].label;
@@ -287,100 +450,78 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       $("hdrTitle").textContent = "金融證照 · 互動考題";
       $("hdrSub").textContent = "人身保險業務員 + 銀行內控";
     }
-
+    $("profileName").textContent = profiles[activeId] ? profiles[activeId].name : "(未選)";
     const allQs = countAllExamQuestions(state.exam);
     const ans = countAnsweredExam(state.exam);
     $("stat").innerHTML = "本科目共 <strong>"+allQs+"</strong> 題 · 已作答 <strong>"+ans+"</strong> 題";
+    $("profileBtn").onclick = ()=>{ openProfileModal(); };
   }
 
-  function countAllExamQuestions(examKey){
-    const exam = D[examKey];
-    let n=0;
-    Object.values(exam.subjects).forEach(secs=>{
-      Object.values(secs).forEach(arr=>{ n += arr.length; });
-    });
-    return n;
+  // ---- Profile modal ----
+  function openProfileModal(){
+    renderProfileList();
+    $("profileModal").classList.add("show");
+    $("newProfileName").value = "";
+    $("newProfileName").focus && $("newProfileName").focus();
   }
-  function countAnsweredExam(examKey){
-    const p = progress[examKey] || {};
-    let n=0;
-    Object.values(p).forEach(secs=>{
-      Object.values(secs).forEach(qs=>{ n += Object.keys(qs).length; });
+  function renderProfileList(){
+    const list = $("profileList");
+    list.innerHTML = "";
+    Object.entries(profiles).forEach(([id, p])=>{
+      const row = document.createElement("div");
+      row.className = "profile-row" + (id===activeId?" active":"");
+      const date = (p.createdAt||"").slice(0,10);
+      row.innerHTML = '<span class="pname">'+(id===activeId?'<strong>★ </strong>':'')+escHTML(p.name)+'</span>'+
+        '<span class="pdate">'+date+'</span>'+
+        (id===activeId
+          ? '<button disabled style="opacity:.5">使用中</button>'
+          : '<button data-act="switch" data-id="'+id+'">切換</button>') +
+        '<button data-act="rename" data-id="'+id+'">重新命名</button>'+
+        (Object.keys(profiles).length>1
+          ? '<button class="danger" data-act="delete" data-id="'+id+'">刪除</button>'
+          : '');
+      list.appendChild(row);
     });
-    return n;
-  }
-  function countCorrectExam(examKey){
-    const exam = D[examKey];
-    const p = progress[examKey] || {};
-    let n=0;
-    Object.entries(p).forEach(([si, secs])=>{
-      const subKeys = Object.keys(exam.subjects);
-      const sub = exam.subjects[subKeys[+si]]; if(!sub) return;
-      const secKeys = Object.keys(sub);
-      Object.entries(secs).forEach(([ci, qs])=>{
-        const arr = sub[secKeys[+ci]]; if(!arr) return;
-        Object.entries(qs).forEach(([qi, ans])=>{
-          if(arr[+qi] && arr[+qi].ans === ans) n++;
-        });
-      });
+    list.querySelectorAll("button[data-act]").forEach(b=>{
+      b.onclick = ()=>{
+        const id=b.dataset.id, act=b.dataset.act;
+        if(act==="switch"){
+          activeId=id; localStorage.setItem(KEY_ACTIVE, id); reloadActiveData(); render(); renderProfileList();
+        } else if(act==="rename"){
+          const nv=prompt("重新命名：", profiles[id].name);
+          if(nv && nv.trim()){ profiles[id].name=nv.trim(); saveJSON(KEY_PROFILES, profiles); render(); renderProfileList(); }
+        } else if(act==="delete"){
+          if(!confirm("刪除「"+profiles[id].name+"」？該使用者的所有作答記錄都會清除。")) return;
+          // Remove namespace
+          ["quiz_progress_v1","quiz_marks_v1","quiz_shuffle_v1"].forEach(b=>{ try{ localStorage.removeItem(b+"::"+id); }catch(e){} });
+          delete profiles[id]; saveJSON(KEY_PROFILES, profiles); renderProfileList();
+        }
+      };
     });
-    return n;
   }
-  function getAllWrongQuestions(examKey){
-    const exam = D[examKey];
-    const p = progress[examKey] || {};
-    const wrong = [];
-    const subKeys = Object.keys(exam.subjects);
-    Object.entries(p).forEach(([si, secs])=>{
-      const sub = exam.subjects[subKeys[+si]]; if(!sub) return;
-      const secKeys = Object.keys(sub);
-      Object.entries(secs).forEach(([ci, qs])=>{
-        const arr = sub[secKeys[+ci]]; if(!arr) return;
-        Object.entries(qs).forEach(([qi, ans])=>{
-          if(arr[+qi] && arr[+qi].ans !== ans){
-            wrong.push({ examKey, subIdx:+si, secIdx:+ci, qIdx:+qi, q: arr[+qi], subLabel: subKeys[+si], secLabel: secKeys[+ci] });
-          }
-        });
-      });
-    });
-    return wrong;
-  }
-  function getAllMarkedQuestions(examKey){
-    const exam = D[examKey];
-    const m = marks[examKey] || {};
-    const out = [];
-    const subKeys = Object.keys(exam.subjects);
-    Object.entries(m).forEach(([si, secs])=>{
-      const sub = exam.subjects[subKeys[+si]]; if(!sub) return;
-      const secKeys = Object.keys(sub);
-      Object.entries(secs).forEach(([ci, qs])=>{
-        const arr = sub[secKeys[+ci]]; if(!arr) return;
-        Object.keys(qs).forEach(qi=>{
-          if(arr[+qi]){
-            out.push({ examKey, subIdx:+si, secIdx:+ci, qIdx:+qi, q: arr[+qi], subLabel: subKeys[+si], secLabel: secKeys[+ci] });
-          }
-        });
-      });
-    });
-    return out;
-  }
+  $("addProfileBtn").onclick = ()=>{
+    const name = $("newProfileName").value.trim();
+    if(!name){ alert("請輸入名字"); return; }
+    const id = genId();
+    profiles[id] = { name, createdAt: nowISO() };
+    saveJSON(KEY_PROFILES, profiles);
+    activeId = id; localStorage.setItem(KEY_ACTIVE, id); reloadActiveData();
+    $("newProfileName").value = "";
+    render(); renderProfileList();
+  };
+  $("closeProfileBtn").onclick = ()=>{ $("profileModal").classList.remove("show"); };
 
+  // ---- Home view ----
   function renderHome(){
-    setHidden($("homeView"), false);
-    setHidden($("quizView"), true);
+    setHidden($("homeView"), false); setHidden($("quizView"), true);
     const exam = D[state.exam];
     $("examLabel").textContent = exam.label + " · 章節列表";
-
     const allN = countAllExamQuestions(state.exam);
     const ansN = countAnsweredExam(state.exam);
     const correctN = countCorrectExam(state.exam);
     const pct = allN ? Math.round(ansN/allN*100) : 0;
     $("gpFill").style.width = pct + "%";
-    if(ansN===0){
-      $("gpText").textContent = "尚未開始作答";
-    } else {
-      $("gpText").textContent = "已答 "+ansN+"/"+allN+" · 答對 "+correctN+" ("+(ansN?Math.round(correctN/ansN*100):0)+"%)";
-    }
+    $("gpText").textContent = ansN===0 ? "尚未開始作答" : ("已答 "+ansN+"/"+allN+" · 答對 "+correctN+" ("+(ansN?Math.round(correctN/ansN*100):0)+"%)");
     $("gpLabel").textContent = exam.label;
 
     const wrongQs = getAllWrongQuestions(state.exam);
@@ -390,46 +531,23 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     $("totalCount").textContent = countAllExamQuestions("insurance") + countAllExamQuestions("bank");
 
     $("reviewWrongBtn").onclick = ()=>{
-      if(wrongQs.length===0){ alert("目前沒有錯題！(完成題目並答錯後，會出現在這裡)"); return; }
-      enterQuiz({
-        type:"wrong",
-        title:"錯題複習 · "+exam.label+" ("+wrongQs.length+" 題)",
-        items: wrongQs.map(x=>({ ...x }))
-      });
+      if(wrongQs.length===0){ alert("目前沒有錯題！"); return; }
+      enterQuiz({ type:"wrong", title:"錯題複習 · "+exam.label+" ("+wrongQs.length+" 題)", items: wrongQs.map(x=>({...x})) });
     };
     $("reviewMarkBtn").onclick = ()=>{
       if(markQs.length===0){ alert("目前沒有標記題！(在題目上點 🔖 標記)"); return; }
-      enterQuiz({
-        type:"marked",
-        title:"標記題複習 · "+exam.label+" ("+markQs.length+" 題)",
-        items: markQs.map(x=>({ ...x }))
-      });
+      enterQuiz({ type:"marked", title:"標記題複習 · "+exam.label+" ("+markQs.length+" 題)", items: markQs.map(x=>({...x})) });
     };
     $("randomBtn").onclick = ()=>{
-      const all = [];
-      const subKeys = Object.keys(exam.subjects);
-      subKeys.forEach((sk, si)=>{
-        const secKeys = Object.keys(exam.subjects[sk]);
-        secKeys.forEach((ck, ci)=>{
-          exam.subjects[sk][ck].forEach((q, qi)=>{
-            all.push({ examKey: state.exam, subIdx:si, secIdx:ci, qIdx:qi, q, subLabel:sk, secLabel:ck });
-          });
-        });
-      });
+      const all = getAllExamQuestions(state.exam);
       const N = Math.min(50, all.length);
-      const items = shuffleArr(all).slice(0, N);
-      enterQuiz({
-        type:"random",
-        title:"隨機 "+N+" 題 · "+exam.label,
-        items
-      });
+      enterQuiz({ type:"random", title:"隨機 "+N+" 題 · "+exam.label, items: shuffleArr(all).slice(0,N) });
     };
+    $("exportHomeBtn").onclick = ()=>{ openExportModal({ scope:"exam" }); };
     $("gpReset").onclick = ()=>{
-      if(!confirm("確定要清除「" + exam.label + "」全部作答記錄？標記不會被刪除。")) return;
-      delete progress[state.exam];
-      saveJSON(STORAGE_KEY, progress);
-      delete shuffle[state.exam];
-      saveJSON(STORAGE_SHUFFLE, shuffle);
+      if(!confirm("確定要清除「" + profiles[activeId].name + " · " + exam.label + "」所有作答記錄？")) return;
+      delete progress[state.exam]; saveActive("quiz_progress_v1", progress);
+      delete shuffle[state.exam];  saveActive("quiz_shuffle_v1", shuffle);
       render();
     };
 
@@ -444,10 +562,9 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         const ans = getSectionAnswers(state.exam, si, ci);
         const ansN = Object.keys(ans).length;
         const total = arr.length;
-        const correct = arr.reduce((acc, q, qi)=>acc + (ans[qi]===q.ans?1:0), 0);
-        const status = ansN===0 ? "" : (ansN===total ? " completed" : " in-progress");
+        const correct = arr.reduce((acc, q, qi)=>acc+(ans[qi]===q.ans?1:0),0);
+        const status = ansN===0 ? "" : (ansN===total?" completed":" in-progress");
         const statusText = ansN===0 ? "尚未作答" : (ansN===total ? "✓ 已完成 · 對 "+correct : ansN+"/"+total+" · 對 "+correct);
-
         const yc = document.createElement("div");
         yc.className = "ycard";
         yc.innerHTML =
@@ -463,6 +580,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     });
   }
 
+  // ---- Quiz ----
   function enterSection(subIdx, secIdx){
     const exam = D[state.exam];
     const subKeys = Object.keys(exam.subjects);
@@ -470,38 +588,18 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     const secKeys = Object.keys(exam.subjects[subLabel]);
     const secLabel = secKeys[secIdx];
     const arr = exam.subjects[subLabel][secLabel];
-
     const order = getShuffleOrder(state.exam, subIdx, secIdx, arr.length);
     const indices = order || arr.map((_,i)=>i);
-    const items = indices.map(qi=>({
-      examKey: state.exam, subIdx, secIdx, qIdx: qi, q: arr[qi], subLabel, secLabel
-    }));
-    enterQuiz({
-      type: "section",
-      title: secLabel+" · "+subLabel,
-      items,
-      sectionRef: { subIdx, secIdx, total: arr.length }
-    });
+    const items = indices.map(qi=>({ examKey:state.exam, subIdx, secIdx, qIdx:qi, q:arr[qi], subLabel, secLabel }));
+    enterQuiz({ type:"section", title: secLabel+" · "+subLabel, items, sectionRef:{subIdx, secIdx, total:arr.length} });
   }
-  function enterQuiz(quiz){
-    state.view = "quiz";
-    state.quiz = quiz;
-    state.quiz.idx = 0;
-    render();
-    window.scrollTo(0,0);
-  }
+  function enterQuiz(quiz){ state.view="quiz"; state.quiz=quiz; state.quiz.idx=0; render(); window.scrollTo(0,0); }
+
   function renderQuiz(){
-    setHidden($("homeView"), true);
-    setHidden($("quizView"), false);
-    const quiz = state.quiz;
-    const items = quiz.items;
-    if(!items.length){
-      $("quizMain").innerHTML = '<div class="card empty">沒有題目可顯示。</div>';
-      $("grid").innerHTML = "";
-      return;
-    }
-    const grid = $("grid");
-    grid.innerHTML = "";
+    setHidden($("homeView"), true); setHidden($("quizView"), false);
+    const quiz = state.quiz; const items = quiz.items;
+    if(!items.length){ $("quizMain").innerHTML = '<div class="card empty">沒有題目可顯示。</div>'; $("grid").innerHTML=""; return; }
+    const grid = $("grid"); grid.innerHTML = "";
     let ansN=0, correctN=0;
     items.forEach((it, i)=>{
       const ans = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
@@ -509,67 +607,53 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       const wrong = ans && ans !== it.q.ans;
       if(ans){ ansN++; if(correct) correctN++; }
       const b = document.createElement("button");
-      b.className = "gbtn" + (i===quiz.idx?" cur":"") + (correct?" right":"") + (wrong?" wrong":"") + (isMarked(it.examKey,it.subIdx,it.secIdx,it.qIdx)?" marked":"");
+      b.className = "gbtn"+(i===quiz.idx?" cur":"")+(correct?" right":"")+(wrong?" wrong":"")+(isMarked(it.examKey,it.subIdx,it.secIdx,it.qIdx)?" marked":"");
       b.textContent = String(i+1);
-      b.onclick = ()=>{ quiz.idx = i; render(); };
+      b.onclick = ()=>{ quiz.idx=i; render(); };
       grid.appendChild(b);
     });
     $("sbTotal").textContent = "題號（共 "+items.length+" 題）· 已答 "+ansN;
-
-    const isSection = quiz.type === "section";
-    $("resetBtn").style.display = isSection ? "" : "none";
-    $("shuffleBtn").style.display = isSection ? "" : "none";
+    const isSection = quiz.type==="section";
+    $("resetBtn").style.display = isSection?"":"none";
+    $("shuffleBtn").style.display = isSection?"":"none";
     $("resetBtn").onclick = ()=>{
       if(!confirm("確定要重置本卷的所有作答？")) return;
-      const ref = quiz.sectionRef;
-      clearSectionAnswers(state.exam, ref.subIdx, ref.secIdx);
-      render();
+      const r=quiz.sectionRef; clearSectionAnswers(state.exam, r.subIdx, r.secIdx); render();
     };
     $("shuffleBtn").onclick = ()=>{
-      const ref = quiz.sectionRef;
-      const cur = getShuffleOrder(state.exam, ref.subIdx, ref.secIdx, ref.total);
-      if(cur){
-        setShuffleOrder(state.exam, ref.subIdx, ref.secIdx, null);
-      } else {
-        const order = shuffleArr(Array.from({length: ref.total}, (_,i)=>i));
-        setShuffleOrder(state.exam, ref.subIdx, ref.secIdx, order);
-      }
-      enterSection(ref.subIdx, ref.secIdx);
+      const r=quiz.sectionRef;
+      const cur=getShuffleOrder(state.exam, r.subIdx, r.secIdx, r.total);
+      if(cur) setShuffleOrder(state.exam, r.subIdx, r.secIdx, null);
+      else setShuffleOrder(state.exam, r.subIdx, r.secIdx, shuffleArr(Array.from({length:r.total},(_,i)=>i)));
+      enterSection(r.subIdx, r.secIdx);
     };
-    $("summaryBtn").onclick = ()=>{ renderSummary(); };
+    $("summaryBtn").onclick = ()=>renderSummary();
+    $("exportQuizBtn").onclick = ()=>openExportModal({ scope:"quiz" });
 
-    const it = items[quiz.idx];
-    const q = it.q;
+    const it = items[quiz.idx], q = it.q;
     const cur = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
     const locked = !!cur;
-
     let optsHTML = "";
     for(const k of ["A","B","C","D"]){
-      let cls = "opt";
-      if(locked){
-        cls += " locked";
-        if(k === q.ans) cls += " correct";
-        else if(k === cur) cls += " wrong";
-      }
+      let cls="opt";
+      if(locked){ cls += " locked"; if(k===q.ans) cls+=" correct"; else if(k===cur) cls+=" wrong"; }
       optsHTML += '<button class="'+cls+'" data-k="'+k+'" '+(locked?"disabled":"")+'>'+
-        '<span class="label">'+k+'.</span><span>'+escHTML(q[k])+'</span>'+
-      '</button>';
+        '<span class="label">'+k+'.</span><span>'+escHTML(q[k])+'</span></button>';
     }
     let verdictHTML = "";
     if(locked){
-      const ok = cur === q.ans;
+      const ok = cur===q.ans;
       verdictHTML = '<div class="verdict '+(ok?"right":"wrong")+'">'+
         '<h3>'+(ok?"✓ 答對":"✗ 答錯")+' · 正解：'+q.ans+'</h3>'+
         (q.exp ? '<div>'+escHTML(q.exp)+'</div>' : '<div style="opacity:.7">（此題未附解析）</div>')+
-      '</div>';
+        '</div>';
     }
     const marked = isMarked(it.examKey, it.subIdx, it.secIdx, it.qIdx);
-
     $("quizMain").innerHTML = '<div class="card">'+
       '<div class="qhead">'+
         '<span class="qnum">第 '+(quiz.idx+1)+' 題 / '+items.length+'</span>'+
         '<span class="qmeta">'+escHTML(it.subLabel)+' · '+escHTML(it.secLabel)+'</span>'+
-        '<button class="markbtn '+(marked?"marked":"")+'" id="markBtn" title="標記此題以便日後複習">'+(marked?"🔖 已標記":"🔖 標記")+'</button>'+
+        '<button class="markbtn '+(marked?"marked":"")+'" id="markBtn">'+(marked?"🔖 已標記":"🔖 標記")+'</button>'+
       '</div>'+
       '<div class="stem">'+escHTML(q.stem)+'</div>'+
       '<div class="opts" id="opts">'+optsHTML+'</div>'+
@@ -578,63 +662,43 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         '<button class="btn ghost" id="prevBtn" '+(quiz.idx===0?"disabled":"")+'>← 上一題</button>'+
         '<button class="btn" id="nextBtn" '+(quiz.idx===items.length-1?"disabled":"")+'>下一題 →</button>'+
         (locked?'<button class="btn ghost" id="redoBtn">↺ 重做本題</button>':'')+
-      '</div>'+
-    '</div>';
-
+      '</div></div>';
     $("quizMain").querySelectorAll(".opt").forEach(btn=>{
-      btn.onclick = ()=>{
-        if(locked) return;
-        const k = btn.dataset.k;
-        setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, k);
-        render();
-      };
+      btn.onclick = ()=>{ if(locked) return; setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, btn.dataset.k); render(); };
     });
-    $("markBtn").onclick = ()=>{
-      toggleMark(it.examKey, it.subIdx, it.secIdx, it.qIdx);
-      render();
-    };
+    $("markBtn").onclick = ()=>{ toggleMark(it.examKey, it.subIdx, it.secIdx, it.qIdx); render(); };
     $("prevBtn").onclick = ()=>{ if(quiz.idx>0){ quiz.idx--; render(); window.scrollTo(0,0); } };
     $("nextBtn").onclick = ()=>{ if(quiz.idx<items.length-1){ quiz.idx++; render(); window.scrollTo(0,0); } };
-    const redoBtn = $("redoBtn");
-    if(redoBtn) redoBtn.onclick = ()=>{
-      const sec = ((progress[it.examKey]||{})[it.subIdx]||{})[it.secIdx];
-      if(sec){ delete sec[it.qIdx]; saveJSON(STORAGE_KEY, progress); }
+    const rb = $("redoBtn");
+    if(rb) rb.onclick = ()=>{
+      const sec=((progress[it.examKey]||{})[it.subIdx]||{})[it.secIdx];
+      if(sec){ delete sec[it.qIdx]; saveActive("quiz_progress_v1", progress); }
       render();
     };
-
     document.onkeydown = (ev)=>{
       if(ev.target && ["INPUT","TEXTAREA"].includes(ev.target.tagName)) return;
-      if(ev.key === "ArrowLeft" && quiz.idx > 0){ quiz.idx--; render(); }
-      else if(ev.key === "ArrowRight" && quiz.idx < items.length-1){ quiz.idx++; render(); }
+      if(ev.key==="ArrowLeft" && quiz.idx>0){ quiz.idx--; render(); }
+      else if(ev.key==="ArrowRight" && quiz.idx<items.length-1){ quiz.idx++; render(); }
       else if(["a","b","c","d","A","B","C","D","1","2","3","4"].includes(ev.key)){
         if(locked) return;
-        const map = {a:"A",b:"B",c:"C",d:"D","1":"A","2":"B","3":"C","4":"D"};
+        const map={a:"A",b:"B",c:"C",d:"D","1":"A","2":"B","3":"C","4":"D"};
         const k = map[ev.key.toLowerCase()] || ev.key.toUpperCase();
-        if(["A","B","C","D"].includes(k)){
-          setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, k);
-          render();
-        }
+        if(["A","B","C","D"].includes(k)){ setSectionAnswer(it.examKey, it.subIdx, it.secIdx, it.qIdx, k); render(); }
       }
     };
   }
 
   function renderSummary(){
-    const quiz = state.quiz;
-    const items = quiz.items;
-    let ansN=0, correctN=0, wrongN=0, markedN=0;
-    const wrongList = [];
-    items.forEach((it, i)=>{
+    const quiz = state.quiz, items = quiz.items;
+    let ansN=0, correctN=0, wrongN=0, markedN=0; const wrongList=[];
+    items.forEach((it,i)=>{
       const ans = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
       const m = isMarked(it.examKey, it.subIdx, it.secIdx, it.qIdx);
-      if(ans){
-        ansN++;
-        if(ans === it.q.ans) correctN++;
-        else { wrongN++; wrongList.push({ idx: i, it, ans }); }
-      }
+      if(ans){ ansN++; if(ans===it.q.ans) correctN++; else { wrongN++; wrongList.push({idx:i, it, ans}); } }
       if(m) markedN++;
     });
     const pct = items.length ? Math.round(correctN/items.length*100) : 0;
-    let wrongHTML = "";
+    let wrongHTML="";
     if(wrongList.length){
       wrongHTML = '<h3 style="margin:18px 0 8px;font-size:14px">錯題列表 ('+wrongList.length+')</h3><div class="wrong-list">';
       wrongList.forEach(w=>{
@@ -642,8 +706,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         wrongHTML += '<div class="wrong-row'+(m?' mk':'')+'" data-i="'+w.idx+'">'+
           '<span class="wno">#'+(w.idx+1)+'</span>'+
           '<span style="flex:1">'+escHTML(w.it.q.stem.slice(0,80))+(w.it.q.stem.length>80?'…':'')+'</span>'+
-          '<span style="color:var(--red);font-size:12px">你選 '+w.ans+' (正解 '+w.it.q.ans+')</span>'+
-        '</div>';
+          '<span style="color:var(--red);font-size:12px">你選 '+w.ans+' (正解 '+w.it.q.ans+')</span></div>';
       });
       wrongHTML += '</div>';
     }
@@ -657,24 +720,213 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         '<div class="item">答對<strong style="color:var(--green)">'+correctN+'</strong></div>'+
         '<div class="item">答錯<strong style="color:var(--red)">'+wrongN+'</strong></div>'+
         '<div class="item">已標記<strong style="color:var(--yellow)">'+markedN+'</strong></div>'+
-      '</div>'+
-      wrongHTML+
+      '</div>'+wrongHTML+
       '<div class="nav" style="margin-top:18px">'+
         '<button class="btn ghost" id="backToQ">← 回到題目</button>'+
-      '</div>'+
-    '</div>';
-    $("backToQ").onclick = ()=>{ render(); };
+        '<button class="btn" id="exportFromSummaryBtn">📤 匯出本卷成績</button>'+
+      '</div></div>';
+    $("backToQ").onclick = ()=>render();
+    $("exportFromSummaryBtn").onclick = ()=>openExportModal({ scope:"quiz" });
     $("quizMain").querySelectorAll(".wrong-row").forEach(row=>{
       row.onclick = ()=>{ quiz.idx = +row.dataset.i; render(); window.scrollTo(0,0); };
     });
   }
 
-  function render(){
-    renderHeader();
-    if(state.view === "home") renderHome();
-    else renderQuiz();
+  // ---- Export modal ----
+  let exportScope = null;
+  function openExportModal(opts){
+    exportScope = opts || { scope:"exam" };
+    const sub = $("exportSub");
+    const profileLabel = profiles[activeId].name;
+    if(exportScope.scope === "quiz" && state.quiz){
+      sub.textContent = "使用者：" + profileLabel + " · 範圍：" + state.quiz.title;
+    } else {
+      sub.textContent = "使用者：" + profileLabel + " · 範圍：" + D[state.exam].label + "（整個科目）";
+    }
+    const opts1 = $("exportOpts");
+    opts1.innerHTML = "";
+    const items = currentExportItems();
+    const stats = computeStats(items);
+    const buttons = [
+      { key:"html_score", label:"📄 成績單 HTML（含題目／你的答案／解析）", count:stats.answered + " 題已作答 · " + stats.correctRate + "% 正確率" },
+      { key:"pdf_wrong",  label:"🖨️ 錯題講義 HTML（可列印 PDF · 含解析）", count: stats.wrong + " 題錯題", disabled: stats.wrong===0 },
+      { key:"json",       label:"💾 進度備份 JSON（跨裝置同步用）", count:"全部使用者「" + profileLabel + "」進度＋標記" },
+      { key:"csv",        label:"📊 章節統計 CSV（可在 Excel 開啟）", count:"逐章節作答數＋正確率" },
+    ];
+    buttons.forEach(b=>{
+      const btn = document.createElement("button");
+      btn.className = "exp-opt";
+      btn.disabled = !!b.disabled;
+      btn.innerHTML = '<span>'+b.label+'</span><span class="count">'+b.count+'</span>';
+      btn.onclick = ()=>{ runExport(b.key); };
+      opts1.appendChild(btn);
+    });
+    $("exportModal").classList.add("show");
+  }
+  function currentExportItems(){
+    if(exportScope.scope === "quiz" && state.quiz) return state.quiz.items;
+    return getAllExamQuestions(state.exam);
+  }
+  function computeStats(items){
+    let answered=0, correct=0, wrong=0, marked=0;
+    items.forEach(it=>{
+      const a = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
+      if(a){ answered++; if(a===it.q.ans) correct++; else wrong++; }
+      if(isMarked(it.examKey, it.subIdx, it.secIdx, it.qIdx)) marked++;
+    });
+    const correctRate = answered ? Math.round(correct/answered*100) : 0;
+    return { total: items.length, answered, correct, wrong, marked, correctRate };
   }
 
+  function runExport(kind){
+    const profileLabel = profiles[activeId].name;
+    const dateStr = new Date().toISOString().slice(0,10);
+    const baseName = (exportScope.scope==="quiz" && state.quiz)
+      ? state.quiz.title.replace(/[\\\/:*?"<>|·\s]+/g,"_")
+      : D[state.exam].label;
+    if(kind==="json"){
+      const dump = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        profile: { name: profileLabel, id: activeId, createdAt: profiles[activeId].createdAt },
+        progress, marks, shuffle,
+      };
+      downloadFile("quiz_backup_"+profileLabel+"_"+dateStr+".json",
+        JSON.stringify(dump, null, 2), "application/json");
+      return;
+    }
+    if(kind==="csv"){
+      const rows = [["科目","章節","總題數","已作答","答對","答錯","正確率(%)","已標記"]];
+      Object.entries(D).forEach(([ek, exam])=>{
+        const subKeys = Object.keys(exam.subjects);
+        subKeys.forEach((sk, si)=>{
+          const secKeys = Object.keys(exam.subjects[sk]);
+          secKeys.forEach((ck, ci)=>{
+            const arr = exam.subjects[sk][ck];
+            let ans=0, c=0;
+            const a = getSectionAnswers(ek, si, ci);
+            arr.forEach((q, qi)=>{ if(a[qi]){ ans++; if(a[qi]===q.ans) c++; } });
+            const w = ans - c;
+            const m = ((marks[ek]||{})[si]||{})[ci]||{};
+            const mk = Object.keys(m).length;
+            const rate = ans ? Math.round(c/ans*100) : 0;
+            rows.push([sk, ck, arr.length, ans, c, w, rate, mk]);
+          });
+        });
+      });
+      const csv = "﻿" + rows.map(r=>r.map(v=>{
+        const s = String(v).replace(/"/g,'""');
+        return /[",\n]/.test(s) ? '"'+s+'"' : s;
+      }).join(",")).join("\n");
+      downloadFile("quiz_stats_"+profileLabel+"_"+dateStr+".csv", csv, "text/csv;charset=utf-8");
+      return;
+    }
+    // For HTML score / PDF wrong, generate a self-contained HTML
+    const items = currentExportItems();
+    const filterFn = kind==="pdf_wrong"
+      ? (it)=>{ const a = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx]; return a && a !== it.q.ans; }
+      : null;
+    const filtered = filterFn ? items.filter(filterFn) : items;
+    const stats = computeStats(items);
+    const titleSuffix = kind==="pdf_wrong" ? "錯題講義" : "成績單";
+    const title = (exportScope.scope==="quiz" && state.quiz ? state.quiz.title : D[state.exam].label) + " · " + titleSuffix;
+    const html = buildExportHTML(title, profileLabel, stats, filtered, kind);
+    downloadFile(baseName+"_"+titleSuffix+"_"+profileLabel+"_"+dateStr+".html", html, "text/html;charset=utf-8");
+  }
+
+  function buildExportHTML(title, profileLabel, stats, items, kind){
+    const isPrint = kind==="pdf_wrong";
+    let body = "";
+    items.forEach((it, i)=>{
+      const a = getSectionAnswers(it.examKey, it.subIdx, it.secIdx)[it.qIdx];
+      const ok = a===it.q.ans;
+      const m = isMarked(it.examKey, it.subIdx, it.secIdx, it.qIdx);
+      let opts = "";
+      ["A","B","C","D"].forEach(k=>{
+        let cls="opt";
+        if(a){ if(k===it.q.ans) cls+=" correct"; else if(k===a) cls+=" wrong"; }
+        opts += '<div class="'+cls+'"><span class="label">'+k+'.</span><span>'+escHTML(it.q[k])+'</span></div>';
+      });
+      const verdict = a
+        ? '<div class="verdict '+(ok?"right":"wrong")+'">'+
+            '<h3>'+(ok?"✓ 答對":"✗ 答錯")+' · 正解：'+it.q.ans+(ok?'':'，你選 '+a)+(m?' · 🔖 已標記':'')+'</h3>'+
+            (it.q.exp?'<div>'+escHTML(it.q.exp)+'</div>':'<div style="opacity:.7">（此題未附解析）</div>')+
+          '</div>'
+        : '<div class="verdict" style="background:#f8f9fa;color:#52606d"><h3>未作答</h3>'+
+          '<div>正解：'+it.q.ans+(it.q.exp?' · '+escHTML(it.q.exp):'')+'</div></div>';
+      body += '<div class="card">'+
+        '<div class="qhead"><span class="qnum">第 '+(i+1)+' 題</span>'+
+        '<span class="qmeta">'+escHTML(it.subLabel)+' · '+escHTML(it.secLabel)+(m?' · 🔖':'')+'</span></div>'+
+        '<div class="stem">'+escHTML(it.q.stem)+'</div>'+
+        '<div class="opts">'+opts+'</div>'+verdict+'</div>';
+    });
+    return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">'+
+      '<title>'+escHTML(title)+'</title>'+
+      '<style>body{font-family:-apple-system,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;background:#f7f7f5;color:#1f2933;line-height:1.65;margin:0;padding:20px;font-size:15px}'+
+      '.wrap{max-width:880px;margin:0 auto}'+
+      'h1{font-size:20px;margin:0 0 4px}'+
+      '.meta{color:#52606d;font-size:13px;margin-bottom:18px}'+
+      '.summary-bar{display:flex;gap:14px;flex-wrap:wrap;background:#fff;padding:14px 18px;border:1px solid #e4e7eb;border-radius:10px;margin-bottom:16px}'+
+      '.summary-bar .it{font-size:13px;color:#52606d}.summary-bar .it strong{display:block;font-size:18px;color:#1f2933;margin-top:2px}'+
+      '.card{background:#fff;border:1px solid #e4e7eb;border-radius:10px;padding:16px 18px;margin-bottom:12px}'+
+      '.qhead{display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap}'+
+      '.qnum{font-size:16px;font-weight:700;color:#1d6f9b}.qmeta{color:#52606d;font-size:12px}'+
+      '.stem{margin:8px 0 10px;white-space:pre-wrap}'+
+      '.opts{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}'+
+      '.opt{padding:6px 10px;border:1px solid #e4e7eb;border-radius:6px;background:#fff;font-size:14px}'+
+      '.opt .label{font-weight:700;margin-right:6px}'+
+      '.opt.correct{background:#d3f9d8;border-color:#2f9e44;color:#186b29}'+
+      '.opt.wrong{background:#ffe3e3;border-color:#c92a2a;color:#861818}'+
+      '.verdict{margin-top:8px;padding:8px 12px;border-radius:6px;font-size:13px;line-height:1.6}'+
+      '.verdict h3{margin:0 0 4px;font-size:13px}'+
+      '.verdict.right{background:#d3f9d8;color:#186b29}.verdict.wrong{background:#ffe3e3;color:#861818}'+
+      '.print-hint{background:#fff4c2;border:1px solid #d9a700;color:#6b4e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px}'+
+      '@media print{body{background:#fff;padding:8px;font-size:11.5px}.wrap{max-width:100%}.no-print,.print-hint{display:none}.card{page-break-inside:avoid;border:0;padding:6px 0;border-top:1px solid #e4e7eb;border-radius:0;margin-bottom:0}.summary-bar{border:0;padding:6px 0;margin-bottom:8px}}'+
+      '</style></head><body><div class="wrap">'+
+      (isPrint?'<div class="print-hint no-print">💡 按 Ctrl/⌘+P 「列印」→「另存為 PDF」即可儲存成 PDF 檔。</div>':'')+
+      '<h1>'+escHTML(title)+'</h1>'+
+      '<div class="meta">使用者：'+escHTML(profileLabel)+' · 匯出時間：'+new Date().toLocaleString("zh-TW")+'</div>'+
+      '<div class="summary-bar">'+
+      '<div class="it">總題數<strong>'+stats.total+'</strong></div>'+
+      '<div class="it">已作答<strong>'+stats.answered+'</strong></div>'+
+      '<div class="it">答對<strong style="color:#2f9e44">'+stats.correct+'</strong></div>'+
+      '<div class="it">答錯<strong style="color:#c92a2a">'+stats.wrong+'</strong></div>'+
+      '<div class="it">正確率<strong>'+stats.correctRate+'%</strong></div>'+
+      (stats.marked>0?'<div class="it">已標記<strong style="color:#d9a700">'+stats.marked+'</strong></div>':'')+
+      '</div>'+ body +
+      '</div></body></html>';
+  }
+
+  // Import
+  $("importBtn").onclick = ()=>{
+    const f = $("importFile").files[0];
+    if(!f){ alert("請先選擇 JSON 備份檔"); return; }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const obj = JSON.parse(e.target.result);
+        if(!obj || !obj.version || !obj.profile){ alert("這不是有效的進度備份檔"); return; }
+        const overwrite = confirm("匯入後將覆蓋使用者「"+profiles[activeId].name+"」的目前進度，確定要繼續？");
+        if(!overwrite) return;
+        progress = obj.progress || {};
+        marks    = obj.marks || {};
+        shuffle  = obj.shuffle || {};
+        persistAll();
+        alert("✓ 已匯入「"+(obj.profile.name||"備份")+"」進度");
+        $("exportModal").classList.remove("show");
+        render();
+      } catch(err){ alert("匯入失敗：" + err.message); }
+    };
+    reader.readAsText(f);
+  };
+  $("closeExportBtn").onclick = ()=>{ $("exportModal").classList.remove("show"); };
+
+  // Click background to close modals
+  ["profileModal","exportModal"].forEach(id=>{
+    $(id).addEventListener("click", (e)=>{ if(e.target.id===id) $(id).classList.remove("show"); });
+  });
+
+  function render(){ renderHeader(); if(state.view==="home") renderHome(); else renderQuiz(); }
   render();
 })();
 </script>
