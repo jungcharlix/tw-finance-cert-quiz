@@ -188,7 +188,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     <h1 id="hdrTitle">金融證照 · 互動考題</h1>
     <span class="sub" id="hdrSub">人身保險業務員 + 銀行內控</span>
     <div class="tabs" id="tabs"></div>
-    <button class="profile-pill" id="profileBtn" title="切換 / 管理使用者"><span class="pdot"></span><span class="pname" id="profileName">預設</span> ▾</button>
+    <button class="profile-pill" id="profileBtn" title="切換 / 管理使用者"><span class="pdot"></span><span class="pname" id="profileName">預設使用者</span> ▾</button>
     <div class="stat" id="stat"></div>
   </div>
 </header>
@@ -200,7 +200,8 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
       <span class="gp-label" id="gpLabel">總體答題進度</span>
       <div class="gp-bar"><div class="gp-fill" id="gpFill"></div></div>
       <span class="gp-text" id="gpText">尚未開始作答</span>
-      <button class="gp-reset" id="gpReset" title="清除目前使用者本科目所有作答">重置本科目</button>
+      <button class="gp-reset" id="gpReset" title="清除目前使用者本科目的所有作答">重置作答紀錄</button>
+      <button class="gp-reset" id="clearMarksBtn" title="清除目前使用者本科目的所有 🔖 標記" style="border-color:var(--yellow);color:#a06a00">🗑️ 清除標記</button>
     </div>
     <h2 id="examLabel">章節列表</h2>
     <div class="desc">點擊章節即可進入該章節的互動測驗。鍵盤可用 ←/→ 切換題目、A/B/C/D 或 1-4 選答案。</div>
@@ -261,7 +262,9 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
   <div class="modal-card">
     <h3 id="exportTitle">📤 匯出 / 匯入</h3>
     <div class="modal-sub" id="exportSub">使用者：— · 範圍：—</div>
-    <label style="margin-top:0">匯出格式</label>
+    <label style="margin-top:0">檔名（選填）</label>
+    <input type="text" id="exportFilename" placeholder="留白＝預設「日期時間_使用者_類型」" maxlength="80">
+    <label style="margin-top:8px">匯出格式</label>
     <div class="opt-row" id="exportOpts"></div>
     <label id="importLabel">還原備份</label>
     <div class="row-2" style="margin-bottom:6px">
@@ -346,7 +349,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     if(profiles) return;
     profiles = {};
     const defId = genId();
-    profiles[defId] = { name: "預設", createdAt: nowISO() };
+    profiles[defId] = { name: "預設使用者", createdAt: nowISO() };
     saveJSON(KEY_PROFILES, profiles);
     localStorage.setItem(KEY_ACTIVE, defId);
     activeId = defId;
@@ -361,6 +364,12 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     });
   }
   migrateLegacy();
+  // One-shot rename: existing profile named exactly "預設" → "預設使用者"
+  let _renamed = false;
+  Object.entries(profiles).forEach(([id, p])=>{
+    if(p && p.name === "預設"){ p.name = "預設使用者"; _renamed = true; }
+  });
+  if(_renamed) saveJSON(KEY_PROFILES, profiles);
   if(!activeId || !profiles[activeId]){
     activeId = Object.keys(profiles)[0];
     localStorage.setItem(KEY_ACTIVE, activeId);
@@ -715,7 +724,14 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       if(markQs.length===0){ alert("目前沒有標記題！(在題目上點 🔖 標記)"); return; }
       enterQuiz({ type:"marked", title:"標記題複習 · "+exam.label+" ("+markQs.length+" 題)", items: markQs.map(x=>({...x})) });
     };
-    $("randomBtn").onclick = ()=>{
+    $("clearMarksBtn").onclick = ()=>{
+      const total = markQs.length;
+      if(total === 0){ alert("「" + exam.label + "」目前沒有標記。"); return; }
+      if(!confirm("確定要清除「" + profiles[activeId].name + " · " + exam.label + "」的全部 " + total + " 個 🔖 標記？\n（不會影響作答記錄，也不會動到其他科目／使用者的標記）")) return;
+      delete marks[state.exam]; saveActive("quiz_marks_v1", marks);
+      render();
+    };
+        $("randomBtn").onclick = ()=>{
       const all = getAllExamQuestions(state.exam);
       const N = Math.min(50, all.length);
       enterQuiz({ type:"random", title:"隨機 "+N+" 題 · "+exam.label, items: shuffleArr(all).slice(0,N) });
@@ -924,6 +940,12 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     // Hide "僅匯入本卷" buttons unless we are on a section quiz view
     document.getElementById("importThisBtn").style.display = isSectionView ? "" : "none";
     document.getElementById("pasteImportThisBtn").style.display = isSectionView ? "" : "none";
+    // Update filename placeholder to show what default would be
+    const fn = $("exportFilename");
+    if(fn){
+      fn.value = "";
+      fn.placeholder = "留白 → " + defaultFilenameStem() + "_<類型>";
+    }
     const opts1 = $("exportOpts");
     opts1.innerHTML = "";
     const items = currentExportItems();
@@ -931,7 +953,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     const buttons = [
       { key:"html_score", label:"📄 成績單 HTML（含題目／你的答案／解析）", count:stats.answered + " 題已作答 · " + stats.correctRate + "% 正確率" },
       { key:"pdf_wrong",  label:"🖨️ 錯題講義 HTML（可列印 PDF · 含解析）", count: stats.wrong + " 題錯題", disabled: stats.wrong===0 },
-      { key:"json",       label:"💾 進度備份 JSON（跨裝置同步用）", count:"全部使用者「" + profileLabel + "」進度＋標記" },
+      { key:"json",       label:"💾 進度備份 JSON（跨裝置同步用）", count:"使用者「" + profileLabel + "」的進度＋標記" },
       { key:"csv",        label:"📊 章節統計 CSV（可在 Excel 開啟）", count:"逐章節作答數＋正確率" },
     ];
     buttons.forEach(b=>{
@@ -959,6 +981,45 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     return { total: items.length, answered, correct, wrong, marked, correctRate };
   }
 
+  // Build a default filename stem
+  // - Home / exam scope: YYYY-MM-DD_HH-MM_<profile>
+  // - Section scope:    YYYY-MM-DD_HH-MM_<profile>_<exam>_<subject>_<section>
+  // - Wrong/Marked/Random quiz: YYYY-MM-DD_HH-MM_<profile>_<exam>_<quizType>
+  function defaultFilenameStem(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2,"0");
+    const ts = d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"_"+pad(d.getHours())+"-"+pad(d.getMinutes());
+    const parts = [ts, profiles[activeId].name || "user"];
+    if(exportScope && exportScope.scope === "quiz" && state.quiz){
+      const exam = D[state.exam];
+      if(state.quiz.type === "section"){
+        const r = state.quiz.sectionRef;
+        const subKeys = Object.keys(exam.subjects);
+        const subLabel = subKeys[r.subIdx];
+        const secKeys = Object.keys(exam.subjects[subLabel]);
+        const secLabel = secKeys[r.secIdx];
+        parts.push(exam.label, subLabel, secLabel);
+      } else {
+        const typeLabel = state.quiz.type === "wrong" ? "錯題複習" : state.quiz.type === "marked" ? "標記題" : state.quiz.type === "random" ? "隨機題" : "本卷";
+        parts.push(exam.label, typeLabel);
+      }
+    }
+    // Sanitize each part (strip path-unsafe chars) before joining
+    return parts.map(p => sanitizeFilename(p)).filter(Boolean).join("_");
+  }
+  // Sanitize a user-supplied filename: strip path separators / control chars / extension
+  function sanitizeFilename(s){
+    return String(s||"").replace(/[\\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\.+$/,"").trim();
+  }
+  // Resolve filename for an export. ext (with leading dot), label (e.g., "成績單") for default suffix
+  function resolveFilename(ext, label){
+    const userInput = sanitizeFilename(($("exportFilename") && $("exportFilename").value) || "");
+    if(userInput){
+      // user provided — use verbatim, just ensure extension
+      return userInput.toLowerCase().endsWith(ext.toLowerCase()) ? userInput : userInput + ext;
+    }
+    return defaultFilenameStem() + "_" + label + ext;
+  }
   function runExport(kind){
     const profileLabel = profiles[activeId].name;
     const dateStr = new Date().toISOString().slice(0,10);
@@ -998,8 +1059,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         scope: scopeMeta,
         progress: dumpProgress, marks: dumpMarks, shuffle: dumpShuffle,
       };
-      const fnameTag = scopeMeta && scopeMeta.type==="section" ? "本章節" : (scopeMeta && scopeMeta.type==="exam" ? D[scopeMeta.examKey].label : "全部使用者");
-      downloadFile("quiz_backup_"+profileLabel+"_"+fnameTag+"_"+dateStr+".json",
+      downloadFile(resolveFilename(".json", "進度備份"),
         JSON.stringify(dump, null, 2), "application/json");
       return;
     }
@@ -1026,7 +1086,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
         const s = String(v).replace(/"/g,'""');
         return /[",\n]/.test(s) ? '"'+s+'"' : s;
       }).join(",")).join("\n");
-      downloadFile("quiz_stats_"+profileLabel+"_"+dateStr+".csv", csv, "text/csv;charset=utf-8");
+      downloadFile(resolveFilename(".csv","章節統計"), csv, "text/csv;charset=utf-8");
       return;
     }
     // For HTML score / PDF wrong, generate a self-contained HTML
@@ -1039,7 +1099,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     const titleSuffix = kind==="pdf_wrong" ? "錯題講義" : "成績單";
     const title = (exportScope.scope==="quiz" && state.quiz ? state.quiz.title : D[state.exam].label) + " · " + titleSuffix;
     const html = buildExportHTML(title, profileLabel, stats, filtered, kind);
-    downloadFile(baseName+"_"+titleSuffix+"_"+profileLabel+"_"+dateStr+".html", html, "text/html;charset=utf-8");
+    downloadFile(resolveFilename(".html", titleSuffix), html, "text/html;charset=utf-8");
   }
 
   function buildExportHTML(title, profileLabel, stats, items, kind){
