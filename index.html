@@ -232,7 +232,7 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     </div>
     <button id="resetBtn" class="btn danger" style="margin-top:12px;width:100%;font-size:13px">重置本卷作答</button>
     <button id="summaryBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">📊 查看本卷總結</button>
-    <button id="exportQuizBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">📤 匯出本卷成績</button>
+    <button id="exportQuizBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">📤 匯入／匯出本卷成績</button>
     <button id="shuffleBtn" class="btn ghost" style="margin-top:6px;width:100%;font-size:13px">🔀 切換順序／隨機</button>
   </aside>
   <main class="main" id="quizMain"></main>
@@ -263,15 +263,21 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     <div class="modal-sub" id="exportSub">使用者：— · 範圍：—</div>
     <label style="margin-top:0">匯出格式</label>
     <div class="opt-row" id="exportOpts"></div>
-    <label>從 JSON 還原進度</label>
-    <div class="row-2" style="margin-bottom:8px">
+    <label id="importLabel">還原備份</label>
+    <div class="row-2" style="margin-bottom:6px">
       <input type="file" id="importFile" accept=".json,application/json">
-      <button class="btn ghost" id="importBtn">📥 匯入檔案</button>
+      <span style="display:flex;gap:6px;flex-wrap:wrap" id="fileBtnRow">
+        <button class="btn" id="importThisBtn" title="只還原目前的章節（其他章節保留）">📥 僅匯入本卷</button>
+        <button class="btn ghost" id="importAllBtn" title="完整還原為備份時的狀態（備份外的章節會被清空）">📥 完整還原</button>
+      </span>
     </div>
     <details id="pasteImportDetails" style="margin:6px 0 10px">
       <summary style="cursor:pointer;color:var(--primary);font-size:13px">📋 或從剪貼簿貼上 JSON（適合用 LINE 訊息傳遞）</summary>
       <textarea id="pasteImportArea" class="share-textarea" placeholder="把 JSON 內容貼進這裡…" style="margin-top:8px;min-height:120px"></textarea>
-      <button class="btn" id="pasteImportBtn" style="margin-top:6px">📥 從文字匯入</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="pasteBtnRow">
+        <button class="btn" id="pasteImportThisBtn">📥 僅匯入本卷</button>
+        <button class="btn ghost" id="pasteImportAllBtn">📥 完整還原</button>
+      </div>
     </details>
     <div class="mobile-hint">📱 <strong>行動裝置匯出建議</strong>：<br>· HTML 成績單／錯題講義 → 用「📲 系統分享」傳到 <strong>檔案 App、iCloud、Google Drive 或 Mail</strong>（LINE 聊天無法接收 HTML 檔）<br>· JSON 備份要透過 LINE 傳 → 改用「📋 複製到剪貼簿」貼成訊息，對方用本頁的「📋 從剪貼簿貼上 JSON」匯入</div>
     <p class="hint">💡 跨裝置同步：在裝置 A 匯出 JSON 備份，透過雲端硬碟／Email 傳到裝置 B，再點「📥 匯入」即可還原。</p>
@@ -298,10 +304,15 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
       <button class="btn" id="shareCopyBtn">📋 複製到剪貼簿</button>
     </div>
     <p class="hint">
-      <strong>💡 各 App 接受度：</strong><br>
+      <strong>📥 匯入語意：</strong><br>
+      <strong>· 完整還原</strong>：把使用者的進度<u>整個換</u>成備份檔當下的狀態（備份外的章節會被清空）。<br>
+      <strong>· 僅匯入本卷</strong>（章節作答頁才會出現）：只還原本章節，其他章節不動。<br>
+      <strong>· 任何模式都絕對不會動到「其他使用者」的資料。</strong><br>
+      <br>
+      <strong>各 App 接受度：</strong><br>
       ✓ 檔案 App / iCloud / Google Drive / AirDrop / Mail / LINE Keep：可收 HTML、JSON、CSV<br>
-      ✗ <strong>LINE 聊天 / Messenger / Instagram</strong>：不接受 HTML、JSON 檔案 → 請改用「📋 複製到剪貼簿」貼成訊息<br>
-      ✗ LINE/FB 內建瀏覽器：請先點右上角「⋯」→「在 Safari／Chrome 開啟」再下載
+      ✗ <strong>LINE 聊天 / Messenger / Instagram</strong>：不接受檔案 → 用「📋 複製到剪貼簿」貼成訊息<br>
+      ✗ LINE/FB 內建瀏覽器：點右上角「⋯」→「在 Safari／Chrome 開啟」再下載
     </p>
     <div class="modal-actions">
       <button class="btn ghost" id="closeShareBtn">關閉</button>
@@ -889,7 +900,7 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       '</div>'+wrongHTML+
       '<div class="nav" style="margin-top:18px">'+
         '<button class="btn ghost" id="backToQ">← 回到題目</button>'+
-        '<button class="btn" id="exportFromSummaryBtn">📤 匯出本卷成績</button>'+
+        '<button class="btn" id="exportFromSummaryBtn">📤 匯入／匯出本卷成績</button>'+
       '</div></div>';
     $("backToQ").onclick = ()=>render();
     $("exportFromSummaryBtn").onclick = ()=>openExportModal({ scope:"quiz" });
@@ -904,11 +915,15 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
     exportScope = opts || { scope:"exam" };
     const sub = $("exportSub");
     const profileLabel = profiles[activeId].name;
+    const isSectionView = exportScope.scope === "quiz" && state.quiz && state.quiz.type === "section";
     if(exportScope.scope === "quiz" && state.quiz){
       sub.textContent = "使用者：" + profileLabel + " · 範圍：" + state.quiz.title;
     } else {
       sub.textContent = "使用者：" + profileLabel + " · 範圍：" + D[state.exam].label + "（整個科目）";
     }
+    // Hide "僅匯入本卷" buttons unless we are on a section quiz view
+    document.getElementById("importThisBtn").style.display = isSectionView ? "" : "none";
+    document.getElementById("pasteImportThisBtn").style.display = isSectionView ? "" : "none";
     const opts1 = $("exportOpts");
     opts1.innerHTML = "";
     const items = currentExportItems();
@@ -951,13 +966,40 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
       ? state.quiz.title.replace(/[\\\/:*?"<>|·\s]+/g,"_")
       : D[state.exam].label;
     if(kind==="json"){
+      let dumpProgress = progress, dumpMarks = marks, dumpShuffle = shuffle, scopeMeta = null;
+      // Section-scoped backup: include only the current section's data
+      if(exportScope.scope==="quiz" && state.quiz && state.quiz.type==="section"){
+        const r = state.quiz.sectionRef;
+        const ek = state.exam, si = r.subIdx, ci = r.secIdx;
+        function pickSection(src){
+          const out = {};
+          if(src && src[ek] && src[ek][si] && src[ek][si][ci] !== undefined){
+            out[ek] = {}; out[ek][si] = {}; out[ek][si][ci] = src[ek][si][ci];
+          }
+          return out;
+        }
+        dumpProgress = pickSection(progress);
+        dumpMarks    = pickSection(marks);
+        dumpShuffle  = pickSection(shuffle);
+        scopeMeta = { type:"section", examKey:ek, subIdx:si, secIdx:ci, title: state.quiz.title };
+      } else if(exportScope.scope==="quiz" && state.quiz){
+        // wrong/marked/random — scope by exam (still better than full profile)
+        const ek = state.exam;
+        function pickExam(src){ const o={}; if(src&&src[ek]) o[ek]=src[ek]; return o; }
+        dumpProgress = pickExam(progress);
+        dumpMarks    = pickExam(marks);
+        dumpShuffle  = pickExam(shuffle);
+        scopeMeta = { type:"exam", examKey:ek, title: D[ek].label };
+      }
       const dump = {
         version: 1,
         exportedAt: new Date().toISOString(),
         profile: { name: profileLabel, id: activeId, createdAt: profiles[activeId].createdAt },
-        progress, marks, shuffle,
+        scope: scopeMeta,
+        progress: dumpProgress, marks: dumpMarks, shuffle: dumpShuffle,
       };
-      downloadFile("quiz_backup_"+profileLabel+"_"+dateStr+".json",
+      const fnameTag = scopeMeta && scopeMeta.type==="section" ? "本章節" : (scopeMeta && scopeMeta.type==="exam" ? D[scopeMeta.examKey].label : "全部使用者");
+      downloadFile("quiz_backup_"+profileLabel+"_"+fnameTag+"_"+dateStr+".json",
         JSON.stringify(dump, null, 2), "application/json");
       return;
     }
@@ -1064,34 +1106,131 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
   }
 
   // Import
-  function applyImportedJSON(text){
+  // Count answers in a tree { examKey: { subIdx: { secIdx: { qIdx: ans } } } }
+  function countEntries(tree){
+    let n=0;
+    Object.values(tree||{}).forEach(subs=>{       // examKey -> subjects
+      Object.values(subs||{}).forEach(secs=>{    // subIdx -> sections
+        Object.values(secs||{}).forEach(qs=>{    // secIdx -> questions
+          if(qs && typeof qs === "object") n += Object.keys(qs).length;
+        });
+      });
+    });
+    return n;
+  }
+  // Filter a backup tree (progress/marks/shuffle) to a specific scope
+  function filterTree(src, ek, si, ci){
+    const out = {};
+    if(!src) return out;
+    if(ek === undefined){ // exam not specified -> nothing
+      return out;
+    }
+    if(!src[ek]) return out;
+    if(si === undefined){ out[ek] = src[ek]; return out; }
+    if(!src[ek][si]) return out;
+    if(ci === undefined){ out[ek] = {[si]: src[ek][si]}; return out; }
+    if(src[ek][si][ci] !== undefined){
+      out[ek] = {}; out[ek][si] = {}; out[ek][si][ci] = src[ek][si][ci];
+    }
+    return out;
+  }
+  // Merge a partial tree into target tree (target wins for empty keys, source overrides leaves)
+  function mergeInto(target, partial){
+    Object.entries(partial||{}).forEach(([ek, secs])=>{
+      target[ek] = target[ek] || {};
+      Object.entries(secs||{}).forEach(([si, sd])=>{
+        target[ek][si] = target[ek][si] || {};
+        Object.entries(sd||{}).forEach(([ci, qs])=>{
+          target[ek][si][ci] = qs;
+        });
+      });
+    });
+  }
+  // mode: "this" = section-level replace (only the current section is touched)
+  //       "all"  = full snapshot restore — current profile's data is replaced by backup's data
+  // OTHER USERS' data is never touched in any mode (different localStorage namespace).
+  function applyImportedJSON(text, mode){
     try{
       const obj = JSON.parse(text);
       if(!obj || !obj.version || !obj.profile){ alert("這不是有效的進度備份檔"); return false; }
-      const overwrite = confirm("匯入後將覆蓋使用者「"+profiles[activeId].name+"」的目前進度，確定要繼續？");
-      if(!overwrite) return false;
-      progress = obj.progress || {};
-      marks    = obj.marks || {};
-      shuffle  = obj.shuffle || {};
+      const isSectionScope = exportScope && exportScope.scope==="quiz" && state.quiz && state.quiz.type==="section";
+
+      if(mode === "this"){
+        // SECTION-LEVEL REPLACE: only swap the current section's data
+        if(!isSectionScope){
+          alert("「僅匯入本卷」只在進入某一章節作答時可用");
+          return false;
+        }
+        const r = state.quiz.sectionRef;
+        const filteredP = filterTree(obj.progress, state.exam, r.subIdx, r.secIdx);
+        const filteredM = filterTree(obj.marks,    state.exam, r.subIdx, r.secIdx);
+        const filteredS = filterTree(obj.shuffle,  state.exam, r.subIdx, r.secIdx);
+        const importN = countEntries(filteredP);
+        if(importN === 0){
+          alert("此備份檔在本章節「" + state.quiz.title + "」沒有對應的資料，無法只匯入本卷。\n（備份檔含 " + countEntries(obj.progress) + " 筆作答，但都不屬於本章節）");
+          return false;
+        }
+        const confirmMsg = "將還原本章節「" + state.quiz.title + "」共 " + importN + " 筆作答。\n\n· 本章節的目前作答會被備份檔取代（含原本沒在備份中的題目，會被清空）\n· 其他章節 / 科目 / 使用者完全不動\n\n確定繼續？";
+        if(!confirm(confirmMsg)) return false;
+        // Replace at section level: first clear current section, then merge in
+        if(progress[state.exam] && progress[state.exam][r.subIdx]){ delete progress[state.exam][r.subIdx][r.secIdx]; }
+        if(marks[state.exam]    && marks[state.exam][r.subIdx]   ){ delete marks[state.exam][r.subIdx][r.secIdx]; }
+        if(shuffle[state.exam]  && shuffle[state.exam][r.subIdx] ){ delete shuffle[state.exam][r.subIdx][r.secIdx]; }
+        mergeInto(progress, filteredP);
+        mergeInto(marks,    filteredM);
+        mergeInto(shuffle,  filteredS);
+        persistAll();
+        alert("✓ 已還原本章節，共 " + importN + " 筆作答");
+        $("exportModal").classList.remove("show");
+        render();
+        return true;
+      }
+
+      // mode === "all": SNAPSHOT RESTORE for the current profile
+      const newP = obj.progress || {};
+      const newM = obj.marks    || {};
+      const newS = obj.shuffle  || {};
+      const newN = countEntries(newP);
+      const oldN = countEntries(progress);
+
+      // Detect section-scoped backup (warn if user is doing 完整還原)
+      const isSectionBackup = obj.scope && obj.scope.type === "section";
+      let warnHeader = "";
+      if(isSectionBackup){
+        warnHeader = "⚠️ 注意：此備份只含單一章節的資料。\n選「完整還原」會把使用者「" + profiles[activeId].name + "」的【其他所有章節進度】全部清空，只保留備份中的那一章節！\n\n如果只想還原該章節，請改點「📥 僅匯入本卷」（在該章節作答頁）。\n\n";
+      }
+
+      const summary = "完整還原為備份時的狀態：\n備份內容 " + newN + " 筆作答 → 取代目前 " + oldN + " 筆作答（差值 " + (oldN - newN) + " 筆會消失）\n\n";
+      const safetyNote = "· 只影響使用者「" + profiles[activeId].name + "」\n· 其他使用者的資料完全不動\n\n確定繼續？";
+      if(!confirm(warnHeader + summary + safetyNote)) return false;
+
+      // SNAPSHOT RESTORE: replace entirely
+      progress = newP;
+      marks    = newM;
+      shuffle  = newS;
       persistAll();
-      alert("✓ 已匯入「"+(obj.profile.name||"備份")+"」進度");
+      alert("✓ 已完整還原為「"+(obj.profile.name||"備份")+"」當下的狀態（" + newN + " 筆作答）");
       $("exportModal").classList.remove("show");
       render();
       return true;
     } catch(err){ alert("匯入失敗：" + err.message); return false; }
   }
-  $("importBtn").onclick = ()=>{
+  function importFromFile(mode){
     const f = $("importFile").files[0];
     if(!f){ alert("請先選擇 JSON 備份檔"); return; }
     const reader = new FileReader();
-    reader.onload = (e)=>{ applyImportedJSON(e.target.result); };
+    reader.onload = (e)=>{ applyImportedJSON(e.target.result, mode); };
     reader.readAsText(f);
-  };
-  $("pasteImportBtn").onclick = ()=>{
+  }
+  function importFromPaste(mode){
     const t = ($("pasteImportArea").value || "").trim();
     if(!t){ alert("請先貼上 JSON 內容"); return; }
-    applyImportedJSON(t);
-  };
+    applyImportedJSON(t, mode);
+  }
+  $("importThisBtn").onclick    = ()=>importFromFile("this");
+  $("importAllBtn").onclick     = ()=>importFromFile("all");
+  $("pasteImportThisBtn").onclick = ()=>importFromPaste("this");
+  $("pasteImportAllBtn").onclick  = ()=>importFromPaste("all");
   $("closeExportBtn").onclick = ()=>{ $("exportModal").classList.remove("show"); };
 
   // Click background to close modals
