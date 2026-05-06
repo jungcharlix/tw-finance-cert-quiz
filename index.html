@@ -264,11 +264,16 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     <label style="margin-top:0">匯出格式</label>
     <div class="opt-row" id="exportOpts"></div>
     <label>從 JSON 還原進度</label>
-    <div class="row-2">
+    <div class="row-2" style="margin-bottom:8px">
       <input type="file" id="importFile" accept=".json,application/json">
-      <button class="btn ghost" id="importBtn">📥 匯入</button>
+      <button class="btn ghost" id="importBtn">📥 匯入檔案</button>
     </div>
-    <div class="mobile-hint">📱 行動裝置：點擊匯出後，會自動使用「系統分享」面板，可直接存到「檔案」App、Google Drive、傳到 LINE 等。如果沒反應會跳出備用視窗讓你複製或在新分頁開啟。</div>
+    <details id="pasteImportDetails" style="margin:6px 0 10px">
+      <summary style="cursor:pointer;color:var(--primary);font-size:13px">📋 或從剪貼簿貼上 JSON（適合用 LINE 訊息傳遞）</summary>
+      <textarea id="pasteImportArea" class="share-textarea" placeholder="把 JSON 內容貼進這裡…" style="margin-top:8px;min-height:120px"></textarea>
+      <button class="btn" id="pasteImportBtn" style="margin-top:6px">📥 從文字匯入</button>
+    </details>
+    <div class="mobile-hint">📱 <strong>行動裝置匯出建議</strong>：<br>· HTML 成績單／錯題講義 → 用「📲 系統分享」傳到 <strong>檔案 App、iCloud、Google Drive 或 Mail</strong>（LINE 聊天無法接收 HTML 檔）<br>· JSON 備份要透過 LINE 傳 → 改用「📋 複製到剪貼簿」貼成訊息，對方用本頁的「📋 從剪貼簿貼上 JSON」匯入</div>
     <p class="hint">💡 跨裝置同步：在裝置 A 匯出 JSON 備份，透過雲端硬碟／Email 傳到裝置 B，再點「📥 匯入」即可還原。</p>
     <div class="modal-actions">
       <button class="btn ghost" id="closeExportBtn">關閉</button>
@@ -292,7 +297,12 @@ main{max-width:1280px;margin:22px auto;padding:0 18px 40px}
     <div class="share-actions">
       <button class="btn" id="shareCopyBtn">📋 複製到剪貼簿</button>
     </div>
-    <p class="hint">💡 iOS Safari：選「📲 開啟系統分享」→ 存到「檔案」App。手機 LINE / FB 內建瀏覽器：請點右上角「⋯」→「在 Safari／Chrome 開啟」再下載。</p>
+    <p class="hint">
+      <strong>💡 各 App 接受度：</strong><br>
+      ✓ 檔案 App / iCloud / Google Drive / AirDrop / Mail / LINE Keep：可收 HTML、JSON、CSV<br>
+      ✗ <strong>LINE 聊天 / Messenger / Instagram</strong>：不接受 HTML、JSON 檔案 → 請改用「📋 複製到剪貼簿」貼成訊息<br>
+      ✗ LINE/FB 內建瀏覽器：請先點右上角「⋯」→「在 Safari／Chrome 開啟」再下載
+    </p>
     <div class="modal-actions">
       <button class="btn ghost" id="closeShareBtn">關閉</button>
     </div>
@@ -1054,26 +1064,33 @@ window.QUIZ_DATA = {"insurance":{"label":"人身保險業務員","subjects":{"�
   }
 
   // Import
+  function applyImportedJSON(text){
+    try{
+      const obj = JSON.parse(text);
+      if(!obj || !obj.version || !obj.profile){ alert("這不是有效的進度備份檔"); return false; }
+      const overwrite = confirm("匯入後將覆蓋使用者「"+profiles[activeId].name+"」的目前進度，確定要繼續？");
+      if(!overwrite) return false;
+      progress = obj.progress || {};
+      marks    = obj.marks || {};
+      shuffle  = obj.shuffle || {};
+      persistAll();
+      alert("✓ 已匯入「"+(obj.profile.name||"備份")+"」進度");
+      $("exportModal").classList.remove("show");
+      render();
+      return true;
+    } catch(err){ alert("匯入失敗：" + err.message); return false; }
+  }
   $("importBtn").onclick = ()=>{
     const f = $("importFile").files[0];
     if(!f){ alert("請先選擇 JSON 備份檔"); return; }
     const reader = new FileReader();
-    reader.onload = (e)=>{
-      try{
-        const obj = JSON.parse(e.target.result);
-        if(!obj || !obj.version || !obj.profile){ alert("這不是有效的進度備份檔"); return; }
-        const overwrite = confirm("匯入後將覆蓋使用者「"+profiles[activeId].name+"」的目前進度，確定要繼續？");
-        if(!overwrite) return;
-        progress = obj.progress || {};
-        marks    = obj.marks || {};
-        shuffle  = obj.shuffle || {};
-        persistAll();
-        alert("✓ 已匯入「"+(obj.profile.name||"備份")+"」進度");
-        $("exportModal").classList.remove("show");
-        render();
-      } catch(err){ alert("匯入失敗：" + err.message); }
-    };
+    reader.onload = (e)=>{ applyImportedJSON(e.target.result); };
     reader.readAsText(f);
+  };
+  $("pasteImportBtn").onclick = ()=>{
+    const t = ($("pasteImportArea").value || "").trim();
+    if(!t){ alert("請先貼上 JSON 內容"); return; }
+    applyImportedJSON(t);
   };
   $("closeExportBtn").onclick = ()=>{ $("exportModal").classList.remove("show"); };
 
